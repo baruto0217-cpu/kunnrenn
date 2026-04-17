@@ -589,22 +589,36 @@ function pf(c){ // parse findings
 
 function selectCase(cid){
   caseId=cid; curCase=cases.find(c=>c.id===cid);
-  // ユーザー操作のタイミングでAudioContextを初期化
-  if(!audioCtx){
-    try{
-      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-      const buf=audioCtx.createBuffer(1,1,22050);
-      const src=audioCtx.createBufferSource();
-      src.buffer=buf; src.connect(audioCtx.destination); src.start(0);
-    }catch(e){}
-  }
-  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+
+  // ===== iOS Safari 音声unlock（ユーザータップの同期処理内で必須）=====
+  // 1. AudioContext unlock（メトロノーム用）
+  try{
+    if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    const buf=audioCtx.createBuffer(1,1,22050);
+    const src=audioCtx.createBufferSource();
+    src.buffer=buf; src.connect(audioCtx.destination); src.start(0);
+  }catch(e){}
+
+  // 2. <audio>要素 unlock（聴診音・音声再生用）
+  // iOSはユーザー操作の同期タイミングで一度でも play() を呼ばないと
+  // 後からポーリングで呼んでも再生できない
+  const unlockAudio = (el) => {
+    el.muted = true;
+    el.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    const p = el.play();
+    if(p) p.then(()=>{ el.pause(); el.muted=false; el.src=''; }).catch(()=>{ el.muted=false; el.src=''; });
+  };
+  unlockAudio($('bg-audio'));
+  unlockAudio($('sp-audio'));
+  audioOn = true;
+  // =====================================================================
+
   hide('G-cases');
   if(role==='instructor'){
     show('G-inst'); $('inst-title').textContent=curCase?.title||'';
     setTab('Vital'); subSession();
   }else{
-    audioOn=true;
     show('G-part'); subSession(); startECG();
   }
 }
@@ -697,29 +711,34 @@ function unsub(){
    PARTICIPANT STATE
    ==================================================== */
 
-// base64 または URL どちらでも再生できるヘルパー
+// base64 または URL どちらでも再生できるヘルパー（iOS Safari対応）
 function playAudioData(audioEl, src, loop){
   try{
     audioEl.loop = loop;
+    // base64 → Blob URL に変換（iOS Safariはdata:URIの<audio>を再生できない場合がある）
+    let playUrl = src;
     if(src.startsWith('data:')){
-      // base64 → Blob URL に変換して再生（iOS Safari対応）
       const [header, b64] = src.split(',');
       const mime = header.match(/:(.*?);/)[1];
       const bin  = atob(b64);
       const arr  = new Uint8Array(bin.length);
       for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
       const blob = new Blob([arr], {type:mime});
-      const url  = URL.createObjectURL(blob);
-      // 古いBlobURLを解放
-      if(audioEl.dataset.blobUrl){ URL.revokeObjectURL(audioEl.dataset.blobUrl); }
-      audioEl.dataset.blobUrl = url;
-      audioEl.src = url;
-    } else {
-      audioEl.src = src;
+      if(audioEl.dataset.blobUrl) URL.revokeObjectURL(audioEl.dataset.blobUrl);
+      playUrl = URL.createObjectURL(blob);
+      audioEl.dataset.blobUrl = playUrl;
     }
+    audioEl.src = playUrl;
+    audioEl.load(); // iOSではload()を明示的に呼ぶ
     audioEl.currentTime = 0;
     const p = audioEl.play();
-    if(p && p.catch) p.catch(e=>console.warn('audio play failed:', e.message));
+    if(p) p.catch(e=>{
+      console.warn('audio play failed:', e.message);
+      // NotAllowedError = まだunlockされていない → 次のポーリングで再試行
+      if(e.name==='NotAllowedError'){
+        audioEl.dataset.soundId = ''; // IDをリセットして次回再試行させる
+      }
+    });
   }catch(e){ console.warn('playAudioData error:', e); }
 }
 
