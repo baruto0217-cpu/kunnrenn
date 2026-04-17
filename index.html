@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>救急シミュレーター v19.2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --red:#e03535;--red2:#c42d2d;--blue:#2563eb;--orange:#ea580c;--green:#16a34a;
+  --bg:#080a0f;--bg2:#13151c;--bg3:#1c1f2a;
+  --s0:#ffffff;--s1:#f8f7f3;--s2:#f0efe9;--s3:#e8e6df;
+  --t0:#111111;--t1:#44443f;--t2:#777770;--t3:#aaa9a0;
+  --b0:rgba(0,0,0,0.06);--b1:rgba(0,0,0,0.11);--b2:rgba(0,0,0,0.18);
+  --r:20px;--rs:12px;
+}
+body{font-family:-apple-system,'Hiragino Sans','Yu Gothic UI',sans-serif;background:var(--s2);color:var(--t0);min-height:100vh;overscroll-behavior:none}
+button{cursor:pointer;border:none;outline:none;font-family:inherit;transition:transform .15s,opacity .15s}
+button:active{transform:scale(.96)}
+input,textarea{font-family:inherit;outline:none;border:none;background:none}
+.hscreen{height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+.flex{display:flex}.col{flex-direction:column}.ac{align-items:center}.jc{justify-content:center}.jsb{justify-content:space-between}
+.f1{flex:1;min-width:0;min-height:0}.wf{width:100%}.hf{height:100%}.rel{position:relative}.abs{position:absolute}
+.oh{overflow:hidden}.oy{overflow-y:auto}.g2{gap:8px}.g3{gap:12px}.g4{gap:16px}.g6{gap:24px}
+.card{background:var(--s0);border-radius:var(--r);border:1.5px solid var(--b0);padding:28px}
+.ifield{background:var(--s1);border:2px solid transparent;border-radius:var(--rs);padding:13px 15px;font-size:14px;color:var(--t0);transition:border-color .2s;display:block}
+.ifield:focus{border-color:var(--red)}.ifield::placeholder{color:var(--t3)}
+.btn{border-radius:var(--rs);font-weight:800;font-size:13px;padding:11px 18px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 3px 12px rgba(224,53,53,.25)}
+.btn-red:hover{background:var(--red2)}
+.btn-blue{background:var(--blue);color:#fff;box-shadow:0 3px 12px rgba(37,99,235,.2)}
+.btn-ghost{background:var(--s2);color:var(--t1)}
+.btn-ghost:hover{background:var(--s3)}
+.tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.04em}
+.tag-fr{background:#dbeafe;color:#1d4ed8}.tag-bk{background:#f3e8ff;color:#7c3aed}
+/* Loading */
+#G-loading{background:var(--bg);color:#fff;height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Config */
+#G-config{background:var(--bg);color:#fff;height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0}
+.cfg-box{background:var(--bg2);border-radius:24px;padding:32px;width:100%;max-width:460px;display:flex;flex-direction:column;gap:14px}
+.cfg-input{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;font-size:14px;color:#fff;font-family:inherit;outline:none;transition:border-color .2s}
+.cfg-input:focus{border-color:var(--red)}.cfg-input::placeholder{color:rgba(255,255,255,.3)}
+/* Role */
+#G-role{background:var(--bg);color:#fff;height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;max-width:520px;margin-top:40px}
+.role-btn{padding:36px 20px;border-radius:28px;font-size:18px;font-weight:900;display:flex;flex-direction:column;align-items:center;gap:14px;transition:transform .2s,box-shadow .2s}
+.role-btn:hover{transform:scale(1.04)}
+.role-instr{background:#fff;color:#111;box-shadow:0 8px 32px rgba(255,255,255,.07)}
+.role-part{background:var(--bg2);color:#fff;border:1px solid rgba(255,255,255,.07)}
+/* Sync */
+#G-sync{background:#04050a;color:#fff;height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center}
+.sync-ring{width:72px;height:72px;border-radius:50%;background:rgba(224,53,53,.12);display:flex;align-items:center;justify-content:center;font-size:36px;animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+/* Case list */
+#G-cases{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.cases-hdr{background:var(--s0);border-bottom:1px solid var(--b0);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.cases-body{flex:1;overflow-y:auto;padding:20px}
+.cases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;max-width:980px;margin:0 auto}
+.case-card{background:var(--s0);border-radius:22px;padding:24px;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color .18s,box-shadow .18s}
+.case-card:hover{border-color:var(--red);box-shadow:0 4px 18px rgba(224,53,53,.1)}
+.add-card{border:3px dashed var(--b1);background:transparent;border-radius:22px;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--t3);cursor:pointer;transition:all .2s}
+.add-card:hover{border-color:var(--red);color:var(--red)}
+/* Instructor */
+#G-inst{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.inst-nav{background:var(--s0);border-bottom:1px solid var(--b0);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:10}
+.inst-body{flex:1;display:flex;overflow:hidden}
+.inst-side{background:var(--s0);border-right:1px solid var(--b0);display:flex;flex-direction:column;gap:6px;padding:10px;width:82px;flex-shrink:0}
+.tab-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 6px;border-radius:16px;border:none;background:transparent;color:var(--t3);font-size:9px;font-weight:800;gap:5px;cursor:pointer;transition:all .18s}
+.tab-btn.on{background:var(--red);color:#fff;box-shadow:0 4px 12px rgba(224,53,53,.3);transform:scale(1.05)}
+.tab-btn:not(.on):hover{background:var(--s2);color:var(--t0)}
+.tab-icon{font-size:18px}
+.inst-main{flex:1;overflow-y:auto;padding:28px;background:var(--s2)}
+/* Vitals + rhythm */
+.rhy-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.rhy-btn{padding:11px 8px;border-radius:11px;font-size:11px;font-weight:800;background:var(--s2);color:var(--t2);border:2px solid transparent;cursor:pointer;transition:all .15s;text-align:center}
+.rhy-btn.on{background:#fef2f2;border-color:var(--red);color:var(--red)}
+.spd-btn{flex:1;padding:9px 6px;border-radius:10px;font-size:11px;font-weight:800;background:var(--s2);color:var(--t2);border:2px solid transparent;cursor:pointer;transition:all .15s}
+.spd-btn.on{background:#eff6ff;border-color:var(--blue);color:var(--blue)}
+/* ECG / Participant */
+#G-part{height:100dvh;background:var(--bg);color:#fff;display:flex;flex-direction:column;overflow:hidden;padding:14px}
+.vp{background:#000;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.vl{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.45;margin-bottom:3px}
+.vv{font-size:clamp(28px,5vw,58px);font-weight:900;line-height:1}
+.ecg-wrap{position:relative;width:100%;height:100%;background:#000;border-radius:24px;overflow:hidden}
+.ecg-grid-bg{position:absolute;inset:0;opacity:.07;background-image:linear-gradient(#444 1px,transparent 1px),linear-gradient(90deg,#444 1px,transparent 1px);background-size:20px 20px;pointer-events:none}
+#ecg-canvas{width:100%;height:100%;display:block;position:relative;z-index:1}
+.ecg-label{position:absolute;top:16px;left:20px;z-index:2;pointer-events:none}
+.ecg-rr{position:absolute;bottom:16px;right:20px;z-index:2;pointer-events:none;text-align:right}
+/* Finding overlay */
+.fo-wrap{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:24px}
+.fo-grid{display:flex;flex-direction:column;gap:14px;width:100%;max-width:820px}
+.fo-card{background:rgba(8,12,24,.94);border:2px solid var(--blue);border-radius:26px;padding:28px;text-align:center;animation:scIn .3s ease-out}
+.fo-speech{background:rgba(30,58,180,.85);border:2px solid rgba(255,255,255,.15);border-radius:26px;padding:32px;text-align:center;animation:scIn .3s ease-out}
+@keyframes scIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+/* Metro indicator */
+.metro-pill{position:fixed;bottom:20px;right:20px;background:rgba(224,53,53,.18);border:1px solid rgba(224,53,53,.35);backdrop-filter:blur(8px);border-radius:18px;padding:12px 18px;display:flex;align-items:center;gap:10px;color:#fff;animation:scIn .4s ease-out}
+.metro-dot{width:8px;height:8px;border-radius:50%;background:var(--red)}
+/* Modal */
+.modal-bg{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.modal{background:var(--s0);border-radius:26px;padding:32px;width:100%;max-width:440px;animation:scIn .22s ease-out}
+/* Finding card */
+.fc{background:var(--s0);border:2px solid var(--b0);border-radius:18px;padding:18px;transition:border-color .15s,box-shadow .15s}
+.fc.act{border-color:var(--red);box-shadow:0 0 0 3px rgba(224,53,53,.1)}
+/* Body map */
+.bp{cursor:pointer;transition:fill .18s,stroke .18s;fill:#f1f0e8;stroke:#ccc;stroke-width:1}
+.bp:hover{fill:rgba(59,130,246,.15);stroke:#3b82f6}
+.bp.sel{fill:rgba(224,53,53,.22);stroke:var(--red);stroke-width:2}
+.bl{font-size:9px;font-weight:900;fill:#999;text-transform:uppercase;pointer-events:none;user-select:none}
+/* Upload */
+.upa{border:3px dashed var(--b1);border-radius:14px;padding:28px;text-align:center;cursor:pointer;transition:all .18s;color:var(--t3);font-size:13px;font-weight:700}
+.upa.ok{border-color:var(--green);color:var(--green);background:#f0fdf4}
+.upa:hover:not(.ok){border-color:var(--t3)}
+/* Irr button */
+.irr{padding:11px 16px;border-radius:11px;border:2px solid var(--b1);background:var(--s2);color:var(--t2);font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+.irr.on{background:#fff7ed;border-color:var(--orange);color:var(--orange)}
+/* Live dot */
+.ldot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 7px var(--red);animation:pulse 1.5s ease-in-out infinite}
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
+@media(max-width:640px){
+  .role-grid{grid-template-columns:1fr}
+  .inst-side{width:68px;padding:8px}
+  .tab-btn{font-size:8px;padding:10px 4px}
+  .inst-main{padding:16px}
+  #pv-wrap{flex-direction:row;flex-wrap:wrap;width:100%!important;height:auto!important}
+  .vv{font-size:clamp(22px,4vw,40px)}
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="G-loading" style="display:flex">
+  <h1 style="font-size:30px;font-weight:900;letter-spacing:-.02em">救急シミュレーター</h1>
+  <div class="spinner"></div>
+  <p style="color:rgba(255,255,255,.35);font-size:12px;letter-spacing:.12em">INITIALIZING v19.2</p>
+</div>
+
+<!-- Login -->
+<div id="G-config" style="display:none">
+  <div style="text-align:center;margin-bottom:36px">
+    <div style="font-size:52px;margin-bottom:14px">🚑</div>
+    <h1 style="font-size:28px;font-weight:900;letter-spacing:-.02em">救急シミュレーター</h1>
+    <p style="font-size:12px;opacity:.3;margin-top:6px;letter-spacing:.1em">v19.2</p>
+  </div>
+  <div class="cfg-box">
+    <div>
+      <div style="font-size:10px;font-weight:900;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">パスワード</div>
+      <input class="cfg-input" id="login-pass" placeholder="パスワードを入力" type="password" autocomplete="off"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <div id="login-error" style="display:none;background:rgba(224,53,53,.2);border:1px solid rgba(224,53,53,.4);border-radius:10px;padding:10px 14px;font-size:13px;color:#fca5a5"></div>
+    <button onclick="doLogin()" id="login-btn" style="background:var(--red);color:#fff;padding:16px;border-radius:13px;font-size:16px;font-weight:900;margin-top:4px">入室する</button>
+  </div>
+</div>
+
+<!-- Role -->
+<div id="G-role" style="display:none">
+  <div style="text-align:center;margin-bottom:40px">
+    <h1 style="font-size:clamp(22px,4vw,34px);font-weight:900;line-height:1.3">救急シミュレーター<br><span style="font-size:.55em;opacity:.3;font-weight:400">v19.2</span></h1>
+    <p style="font-size:12px;opacity:.4;margin-top:10px">役割を選んでください</p>
+  </div>
+  <div class="role-grid">
+    <button class="role-btn role-instr" onclick="setRole('instructor')">
+      <span style="font-size:44px">🖥️</span>
+      <span>想定者</span>
+      <span style="font-size:12px;font-weight:500;color:#777">（指導・操作）</span>
+    </button>
+    <button class="role-btn role-part" onclick="setRole('participant')">
+      <span style="font-size:44px">👥</span>
+      <span>実施者</span>
+      <span style="font-size:12px;font-weight:500;opacity:.4">（訓練参加）</span>
+    </button>
+  </div>
+  <button onclick="goLogin()" style="background:none;color:rgba(255,255,255,.3);font-size:12px;padding:16px 24px;border-radius:12px;margin-top:24px;display:block;width:100%;max-width:520px">← 戻る</button>
+</div>
+
+<!-- Sync (Participant) -->
+<div id="G-sync" style="display:none">
+  <div class="sync-ring">📡</div>
+  <h2 style="font-size:34px;font-weight:900;margin:28px 0 12px">同期を開始します</h2>
+  <p style="color:rgba(255,255,255,.4);margin-bottom:48px">音声・映像の同期が開始されます</p>
+  <button onclick="startSync()" style="background:var(--red);color:#fff;padding:20px 0;border-radius:22px;font-size:20px;font-weight:900;width:100%;max-width:340px">開始する</button>
+</div>
+
+<!-- Case list -->
+<div id="G-cases" style="display:none">
+  <div class="cases-hdr">
+    <button onclick="goLogin()" class="btn btn-ghost">← ログイン</button>
+    <h1 style="font-size:20px;font-weight:900">症例選択 <span id="room-label" style="font-size:12px;font-weight:500;opacity:.4"></span></h1>
+    <div style="width:80px"></div>
+  </div>
+  <div class="cases-body">
+    <div class="cases-grid" id="cases-grid">
+      <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--t3)">
+        <div class="spinner" style="margin:0 auto 16px"></div>読み込み中...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Instructor -->
+<div id="G-inst" style="display:none">
+  <nav class="inst-nav">
+    <div class="flex ac g3">
+      <button onclick="exitCase()" class="btn btn-ghost" style="padding:8px 15px;font-size:12px">← 症例一覧</button>
+      <span style="font-size:16px;font-weight:900;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="inst-title">—</span>
+    </div>
+    <div class="flex ac g3">
+      <button id="edit-btn" onclick="toggleEdit()" style="padding:8px 18px;border-radius:999px;font-size:12px;font-weight:800;background:var(--s2);color:var(--t1)">編集モード</button>
+      <button onclick="goBack()" style="background:none;color:var(--t3);font-size:18px;padding:6px" title="初期画面へ">⬅</button>
+    </div>
+  </nav>
+  <div class="inst-body">
+    <aside class="inst-side">
+      <button class="tab-btn" id="tb-Pre" onclick="setTab('Pre')"><span class="tab-icon">📍</span>接触前</button>
+      <button class="tab-btn" id="tb-Init" onclick="setTab('Init')"><span class="tab-icon">❤️</span>ABCDE</button>
+      <button class="tab-btn on" id="tb-Vital" onclick="setTab('Vital')"><span class="tab-icon">📈</span>モニター</button>
+      <button class="tab-btn" id="tb-Full" onclick="setTab('Full')"><span class="tab-icon">📋</span>全身観察</button>
+    </aside>
+    <main class="inst-main" id="inst-main"></main>
+  </div>
+</div>
+
+<!-- Participant -->
+<div id="G-part" style="display:none">
+  <nav style="height:34px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:0 6px;flex-shrink:0">
+    <div class="flex ac g2"><div class="ldot"></div><span style="font-size:10px;font-weight:900;letter-spacing:.4em;color:rgba(255,255,255,.22)">LIVE</span></div>
+    <button onclick="exitAndLogout()" style="background:none;color:rgba(255,255,255,.22);font-size:10px;font-weight:900;letter-spacing:.12em;padding:6px 12px;border:1px solid rgba(255,255,255,.07);border-radius:999px">退室</button>
+  </nav>
+  <div style="flex:1;display:flex;gap:12px;min-height:0" id="part-body">
+    <!-- vitals column -->
+    <div id="pv-wrap" style="display:flex;flex-direction:column;gap:10px;width:180px;flex-shrink:0">
+      <div class="vp f1"><div class="vl" style="color:#ff4444">HR</div><div class="vv" id="pv-hr" style="color:#ff4444">--</div></div>
+      <div class="vp f1"><div class="vl" style="color:#4ade80">BP</div><div class="vv" id="pv-bp" style="color:#4ade80;font-size:clamp(18px,3.5vw,36px)">--/--</div></div>
+      <div class="vp f1"><div class="vl" style="color:#60a5fa">SpO₂</div><div class="vv" id="pv-spo2" style="color:#60a5fa">--</div></div>
+      <div class="vp f1"><div class="vl" style="color:#fb923c">Temp</div><div class="vv" id="pv-temp" style="color:#fb923c;font-size:clamp(18px,3vw,32px)">--°C</div></div>
+    </div>
+    <!-- ECG -->
+    <div style="flex:1;position:relative;transition:opacity .6s,filter .6s" id="ecg-area">
+      <div class="ecg-wrap hf">
+        <div class="ecg-grid-bg"></div>
+        <canvas id="ecg-canvas"></canvas>
+        <div class="ecg-label">
+          <div style="color:rgba(0,255,65,.45);font-size:11px;font-weight:700">Lead II</div>
+          <div id="ecg-rhy-lbl" style="color:rgba(0,255,65,.2);font-size:9px;text-transform:uppercase">SR SIGNAL</div>
+        </div>
+        <div class="ecg-rr">
+          <div style="color:rgba(0,200,255,.35);font-size:9px;font-weight:800;text-transform:uppercase">Respiratory Rate</div>
+          <div id="pv-rr" style="color:rgba(0,200,255,.65);font-size:20px;font-weight:900">-- /min</div>
+        </div>
+      </div>
+      <!-- Findings overlay (inside ECG area) -->
+      <div id="fo" style="display:none;position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.45);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px">
+        <div id="fo-inner" style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:700px"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Metro pill -->
+  <div id="metro-pill" style="display:none" class="metro-pill">
+    <div class="metro-dot" id="metro-dot"></div>
+    <div><div style="font-size:9px;font-weight:900;color:rgba(224,53,53,.8);text-transform:uppercase">Metronome</div><div id="metro-bpm-pill" style="font-size:13px;font-weight:900">-- BPM</div></div>
+  </div>
+</div>
+
+<!-- Modal: Add case -->
+<div id="M-addcase" style="display:none" class="modal-bg">
+  <div class="modal">
+    <h3 style="font-size:20px;font-weight:900;margin-bottom:22px">新規症例登録</h3>
+    <input id="new-title" class="ifield wf" placeholder="症例タイトル…" style="margin-bottom:20px">
+    <div class="flex g3">
+      <button class="btn btn-ghost f1" onclick="closeModal('M-addcase')">キャンセル</button>
+      <button class="btn btn-red f1" onclick="createCase()">作成</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Finding form -->
+<div id="M-finding" style="display:none" class="modal-bg">
+  <div class="modal" style="max-width:460px">
+    <h3 style="font-size:19px;font-weight:900;margin-bottom:20px" id="fm-title">所見の登録</h3>
+    <div style="display:flex;background:var(--s2);border-radius:11px;padding:3px;margin-bottom:18px">
+      <button id="ft-image"  onclick="setFT('image')"  style="flex:1;padding:8px;border-radius:8px;font-size:10px;font-weight:900;text-transform:uppercase;background:var(--s0);color:var(--blue)">画像</button>
+      <button id="ft-speech" onclick="setFT('speech')" style="flex:1;padding:8px;border-radius:8px;font-size:10px;font-weight:900;text-transform:uppercase;background:transparent;color:var(--t2)">音声</button>
+      <button id="ft-sound"  onclick="setFT('sound')"  style="flex:1;padding:8px;border-radius:8px;font-size:10px;font-weight:900;text-transform:uppercase;background:transparent;color:var(--t2)">聴診音</button>
+    </div>
+    <input id="fm-label" class="ifield wf" placeholder="タイトル" style="margin-bottom:10px">
+    <textarea id="fm-desc" class="ifield wf" placeholder="説明文" style="height:90px;resize:none;margin-bottom:10px"></textarea>
+    <div id="fm-upload" class="upa" onclick="document.getElementById('fm-file').click()">📁 ファイルをアップロード</div>
+    <input type="file" id="fm-file" style="display:none" onchange="onFileChange(event)">
+    <div class="flex g3" style="margin-top:18px">
+      <button class="btn btn-ghost f1" onclick="closeModal('M-finding')">キャンセル</button>
+      <button class="btn btn-blue f1" id="fm-save" onclick="saveFinding()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Audio -->
+<audio id="bg-audio" loop></audio>
+<audio id="sp-audio"></audio>
+
+<script>
+/* ====================================================
+   ★ 設定：ここを書き換えてください
+   ==================================================== */
+const CONFIG = {
+  // ===================================================
+  // ★ ここを書き換えてください（この3箇所だけ）
+  supabaseUrl: 'https://xxxx.supabase.co',   // SupabaseのProject URL
+  supabaseKey: 'your-anon-public-key-here',  // Supabase anon public key
+  roomPassword: '1234',                      // 入室パスワード（全員共通）
+  // ===================================================
+};
+/* ==================================================== */
+
+/* ====================================================
+   STATE
+   ==================================================== */
+let SB = null, isDemo = false, role = null;
+let currentRoom = null;
+
+/* ── Supabase REST API wrapper (素のfetch版・file://対応) ── */
+const API = {
+  url: '', key: '',
+  init(u, k){ this.url=u.replace(/\/+$/,''); this.key=k; },
+  headers(){
+    return { 'Content-Type':'application/json', 'apikey':this.key, 'Authorization':'Bearer '+this.key, 'Prefer':'return=representation' };
+  },
+  opts(extra={}){ return {mode:'cors', headers:this.headers(), ...extra}; },
+  async get(table, params={}){
+    let q = this.url+'/rest/v1/'+table+'?';
+    if(params.select) q += 'select='+params.select+'&';
+    if(params.order)  q += 'order='+params.order+'&';
+    if(params.filter) q += params.filter+'&';
+    if(params.limit)  q += 'limit='+params.limit+'&';
+    if(params.single) q += 'limit=1&';
+    const r = await fetch(q, this.opts({method:'GET'}));
+    const data = await r.json();
+    if(!r.ok) return {data:null, error:{message: data.message||data.error||JSON.stringify(data)}};
+    if(params.single){ return {data: Array.isArray(data)?(data[0]||null):data, error:null}; }
+    return {data: Array.isArray(data)?data:[], error:null};
+  },
+  async insert(table, body){
+    const r = await fetch(this.url+'/rest/v1/'+table, this.opts({method:'POST', body:JSON.stringify(body)}));
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) return {data:null, error:{message: data.message||data.error||JSON.stringify(data)}};
+    return {data, error:null};
+  },
+  async update(table, body, filter){
+    const r = await fetch(this.url+'/rest/v1/'+table+'?'+filter, this.opts({method:'PATCH', body:JSON.stringify(body)}));
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) return {data:null, error:{message: data.message||data.error||JSON.stringify(data)}};
+    return {data, error:null};
+  },
+  async upsert(table, body, conflictCol='id'){
+    const h = {...this.headers(), 'Prefer':'resolution=merge-duplicates,return=representation'};
+    const r = await fetch(this.url+'/rest/v1/'+table+'?on_conflict='+conflictCol, {mode:'cors', method:'POST', headers:h, body:JSON.stringify(body)});
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) return {data:null, error:{message: data.message||data.error||JSON.stringify(data)}};
+    return {data, error:null};
+  }
+};
+let caseId = null, curCase = null;
+let activeTab = 'Vital', editMode = false;
+let bodyPart = null, bodySide = 'front';
+let ftab = 'Pre'; // finding tab being edited
+let fform = {}; // finding form state
+let cases = [], demoCases = [
+  {id:'d1',title:'心肺停止症例（基本）',findings:{Pre:[],Init:[],Full:[]},created_at:0},
+  {id:'d2',title:'急性心筋梗塞疑い',findings:{Pre:[],Init:[],Full:[]},created_at:0}
+];
+let SS = { // session state
+  activeFindingIds:[], playingSoundUrl:null, isSpeakingText:null,
+  speechUrl:null, speechId:null,
+  metronome:{on:false,bpm:100,isIrregular:false},
+  vitals:{bpSys:'--',bpDia:'--',hr:'72',rr:'--',spo2:'--',temp:'--',rhythmType:'SR',sweepSpeed:160},
+  showVitals:false
+};
+let LV = {bpSys:'',bpDia:'',hr:'72',rr:'',spo2:'',temp:'',rhythmType:'SR',sweepSpeed:160};
+let audioOn = false, metroTimer = null, audioCtx = null;
+let ecgRaf = null, ecgX=0, ecgLY=null, ecgLT=0, ecgBS=0, ecgAJ=1;
+let ecgBpm=72, ecgRhythm='SR', ecgSweep=160;
+let reSub = null, casesSub = null, pollTimer = null;
+
+/* ====================================================
+   INIT
+   ==================================================== */
+window.onload = () => {
+  // CONFIGのURLとキーが未設定の場合はアラート
+  if(!CONFIG.supabaseUrl || CONFIG.supabaseUrl.includes('xxxx') ||
+     !CONFIG.supabaseKey || CONFIG.supabaseKey.includes('your-anon')){
+    document.getElementById('G-loading').innerHTML =
+      '<div style="text-align:center;color:#fca5a5;padding:32px">' +
+      '<div style="font-size:40px;margin-bottom:16px">⚠️</div>' +
+      '<h2 style="font-size:20px;font-weight:900;margin-bottom:12px">設定が必要です</h2>' +
+      '<p style="font-size:13px;opacity:.7;line-height:1.8">index.htmlを開き、<br>CONFIGブロックに<br>SupabaseのURLとAPIキーを<br>入力してください。</p>' +
+      '</div>';
+    return;
+  }
+  API.init(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+  SB = true;
+  show('G-config'); hide('G-loading');
+};
+
+function $(id){ return document.getElementById(id); }
+function show(id){ $(id).style.display=''; }
+function hide(id){ $(id).style.display='none'; }
+function closeModal(id){ hide(id); }
+function tryJSON(s){ try{ return JSON.parse(s); }catch(e){ return null; } }
+
+function doLogin(){
+  const pass  = $('login-pass').value.trim();
+  const errEl = $('login-error');
+  errEl.style.display='none';
+
+  if(!pass){ errEl.textContent='パスワードを入力してください'; errEl.style.display='block'; return; }
+  if(pass !== CONFIG.roomPassword){
+    errEl.textContent='パスワードが正しくありません';
+    errEl.style.display='block';
+    $('login-pass').value='';
+    return;
+  }
+  // 認証成功 → 役割選択画面へ
+  currentRoom = 'room1';
+  hide('G-config'); show('G-role');
+}
+
+function setRole(r){
+  role=r; hide('G-role');
+  if(r==='participant'){ show('G-sync'); }
+  else{ show('G-cases'); loadCases(); }
+}
+
+function goBack(){
+  hideAll(); show('G-role'); role=null;
+  stopECG(); unsub(); stopMetro();
+}
+function goLogin(){
+  hideAll(); show('G-config'); role=null; SB=null;
+  stopECG(); unsub(); stopMetro();
+}
+function hideAll(){
+  ['G-loading','G-config','G-role','G-sync','G-cases','G-inst','G-part'].forEach(hide);
+}
+function startSync(){ audioOn=true; hide('G-sync'); show('G-cases'); loadCases(); }
+
+/* ====================================================
+   CASES
+   ==================================================== */
+async function loadCases(){
+  if(isDemo){ cases=[...demoCases]; renderCases(); return; }
+  try{
+    const {data,error} = await API.get('sim_cases',{select:'*',order:'created_at.desc'});
+    if(error) throw new Error(error.message || error.details || JSON.stringify(error));
+    cases = data||[];
+  }catch(e){
+    console.error('loadCases error:', e);
+    cases=[];
+    const msg = e.message||String(e);
+    if(msg.includes('Failed to fetch')||msg.includes('NetworkError')||msg.includes('CORS')){
+      alert('通信エラー（CORS）\n\nfile:// で開くと通信できません。\n\n✅ 解決方法:\n① GitHub Pagesにアップして https:// で開く\n② またはターミナルで:\n   python3 -m http.server 8080\n   → http://localhost:8080 で開く');
+    } else if(msg.includes('does not exist')||msg.includes('relation')){
+      alert('テーブルが見つかりません。\nSupabaseのSQL Editorでテーブルを作成してください。');
+    }
+  }
+  renderCases();
+  // ポーリングで症例リストを定期更新（5秒）
+  if(casesSub) clearInterval(casesSub);
+  if(!isDemo) casesSub = setInterval(loadCasesQuiet, 5000);
+}
+
+function renderCases(){
+  const rl=$('room-label');
+  if(rl) rl.textContent = role==='instructor' ? '想定者モード' : '実施者モード';
+  const g=$('cases-grid'); g.innerHTML='';
+  cases.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='case-card';
+    d.innerHTML=`
+      <div style="flex:1">
+        <div style="font-size:17px;font-weight:900">${esc(c.title)}</div>
+      </div>
+      <div class="flex ac g2">
+        ${role==='instructor'?`<button onclick="copyCase('${c.id}',event)" style="background:none;color:var(--t3);font-size:17px;padding:5px;border-radius:8px" title="コピー">⎘</button>`:''}
+        <span style="color:var(--t3);font-size:20px">›</span>
+      </div>`;
+    d.addEventListener('click',()=>selectCase(c.id));
+    g.appendChild(d);
+  });
+  if(role==='instructor'){
+    const b=document.createElement('button');
+    b.className='add-card';
+    b.innerHTML='<span style="font-size:28px">+</span><span style="font-size:13px;font-weight:900">新規症例を作成</span>';
+    b.onclick=()=>show('M-addcase');
+    g.appendChild(b);
+  }
+}
+
+async function createCase(){
+  const t=$('new-title').value.trim(); if(!t) return;
+  const f=JSON.stringify({Pre:[],Init:[],Full:[]});
+  if(isDemo){
+    demoCases.unshift({id:'d'+Date.now(),title:t,findings:{Pre:[],Init:[],Full:[]},created_at:Date.now()});
+    cases=[...demoCases];
+  }else{
+    const {error} = await API.insert('sim_cases',{title:t,findings:f,created_at:new Date().toISOString()});
+    if(error){ alert('作成エラー: '+(error.message||JSON.stringify(error))); return; }
+    await loadCases();
+  }
+  $('new-title').value=''; closeModal('M-addcase');
+  if(isDemo) renderCases();
+}
+
+async function copyCase(cid,e){
+  e.stopPropagation();
+  const orig=cases.find(c=>c.id===cid); if(!orig) return;
+  const fs=typeof orig.findings==='string'?orig.findings:JSON.stringify(orig.findings);
+  if(isDemo){
+    demoCases.unshift({id:'d'+Date.now(),title:orig.title+' (コピー)',findings:pf(orig),created_at:Date.now()});
+    cases=[...demoCases]; renderCases();
+  }else{
+    const {error} = await API.insert('sim_cases',{title:orig.title+' (コピー)',findings:fs,created_at:new Date().toISOString()});
+    if(error){ alert('コピーエラー: '+(error.message||JSON.stringify(error))); }
+  }
+}
+
+// 症例リストをバックグラウンドで静かに更新
+async function loadCasesQuiet(){
+  if(isDemo||!API.key) return;
+  const {data} = await API.get('sim_cases',{select:'*',order:'created_at.desc'}).catch(()=>({data:null}));
+  if(data && JSON.stringify(data)!==JSON.stringify(cases)){ cases=data; renderCases(); }
+}
+
+function pf(c){ // parse findings
+  if(!c) return {Pre:[],Init:[],Full:[]};
+  if(typeof c.findings==='string'){ try{ return JSON.parse(c.findings); }catch(e){} }
+  return c.findings||{Pre:[],Init:[],Full:[]};
+}
+
+function selectCase(cid){
+  caseId=cid; curCase=cases.find(c=>c.id===cid);
+  hide('G-cases');
+  if(role==='instructor'){
+    show('G-inst'); $('inst-title').textContent=curCase?.title||'';
+    setTab('Vital'); subSession();
+  }else{
+    show('G-part'); subSession(); startECG();
+  }
+}
+
+function exitCase(){
+  caseId=null; curCase=null;
+  stopECG(); unsub(); stopMetro();
+  hideAll(); show('G-cases'); loadCases();
+}
+function exitAndLogout(){
+  exitCase();
+  // 実施者は退室でログイン画面に戻る
+  if(role==='participant'){ goLogin(); }
+}
+
+/* ====================================================
+   SESSION SYNC
+   ==================================================== */
+async function subSession(){
+  if(isDemo) return;
+  if(reSub){ clearInterval(reSub); reSub=null; }
+  if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
+  await fetchSession();
+  // ポーリングで同期（2秒）
+  pollTimer = setInterval(fetchSession, 2000);
+}
+
+async function fetchSession(){
+  if(isDemo||!API.key) return;
+  try{
+    const {data,error}=await API.get('sim_sessions',{select:'*',filter:'case_id=eq.'+encodeURIComponent((currentRoom||'00')+'-'+caseId),single:true});
+    if(error) console.warn('fetchSession:', error.message||JSON.stringify(error));
+    if(data) applySession(data);
+  }catch(e){ console.warn('fetchSession ex:', e); }
+}
+
+function applySession(data){
+  const prev={...SS};
+  try{
+    if(data.active_finding_ids!=null) SS.activeFindingIds=data.active_finding_ids;
+    if(data.playing_sound_url!==undefined) SS.playingSoundUrl=data.playing_sound_url;
+    if(data.is_speaking_text!==undefined) SS.isSpeakingText=data.is_speaking_text;
+    if(data.speech_url!==undefined) SS.speechUrl=data.speech_url;
+    if(data.speech_id!==undefined) SS.speechId=data.speech_id;
+    if(data.metronome!=null) SS.metronome=typeof data.metronome==='string'?JSON.parse(data.metronome):data.metronome;
+    if(data.vitals!=null) SS.vitals=typeof data.vitals==='string'?JSON.parse(data.vitals):data.vitals;
+    if(data.show_vitals!=null) SS.showVitals=data.show_vitals;
+  }catch(e){ console.error(e); }
+  if(role==='participant') applyPartState(SS,prev);
+}
+
+async function pushSession(updates){
+  Object.assign(SS,updates);
+  if(isDemo){
+    if(role==='participant') applyPartState(SS,{});
+    return;
+  }
+  const pl={
+    case_id:(currentRoom||'00')+'-'+caseId,
+    active_finding_ids:SS.activeFindingIds,
+    playing_sound_url:SS.playingSoundUrl,
+    is_speaking_text:SS.isSpeakingText,
+    speech_url:SS.speechUrl,
+    speech_id:SS.speechId,
+    metronome:SS.metronome,
+    vitals:SS.vitals,
+    show_vitals:SS.showVitals,
+    updated_at:new Date().toISOString()
+  };
+  const {error} = await API.upsert('sim_sessions', pl, 'case_id');
+  if(error) console.error('pushSession error:', error.message||JSON.stringify(error));
+}
+
+function unsub(){
+  if(reSub){ clearInterval(reSub); reSub=null; }
+  if(casesSub){ clearInterval(casesSub); casesSub=null; }
+  if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
+}
+
+/* ====================================================
+   PARTICIPANT STATE
+   ==================================================== */
+function applyPartState(s,prev){
+  // vitals
+  const v=s.vitals||{};
+  $('pv-hr').textContent = v.hr||'--';
+  $('pv-bp').textContent = (v.bpSys||'--')+'/'+(v.bpDia||'--');
+  $('pv-spo2').textContent = v.spo2||'--';
+  $('pv-temp').textContent = (v.temp||'--')+'°C';
+  $('pv-rr').textContent = (v.rr||'--')+' /min';
+  const rl=$('ecg-rhy-lbl'); if(rl) rl.textContent=(v.rhythmType||'SR')+' SIGNAL';
+  // ECG params
+  ecgBpm=parseInt(v.hr)||72; ecgRhythm=v.rhythmType||'SR'; ecgSweep=v.sweepSpeed||160;
+  // findings overlay
+  renderFO(s);
+  // metronome pill
+  const mp=$('metro-pill');
+  if(mp){ mp.style.display=s.metronome?.on?'flex':'none'; }
+  if(s.metronome?.on){
+    $('metro-bpm-pill').textContent=s.metronome.bpm+' BPM'+(s.metronome.isIrregular?' (不整)':'');
+    const dot=$('metro-dot');
+    if(dot) dot.style.animation=`pulse ${60/s.metronome.bpm}s ease-in-out infinite`;
+  }
+  // audio
+  if(audioOn){
+    const ba=$('bg-audio');
+    if(s.playingSoundUrl){ if(ba.src!==s.playingSoundUrl){ ba.src=s.playingSoundUrl; ba.play().catch(()=>{}); } }
+    else{ ba.pause(); ba.src=''; }
+    if(s.speechUrl&&s.speechId!==prev?.speechId){
+      const sa=$('sp-audio'); sa.src=s.speechUrl; sa.play().catch(()=>{});
+    }
+  }
+}
+
+function renderFO(s){
+  const all=[...pf(curCase).Pre||[],...pf(curCase).Init||[],...pf(curCase).Full||[]];
+  const active=all.filter(f=>(s.activeFindingIds||[]).includes(f.id));
+  const hasSpeech=!!s.isSpeakingText;
+  const fo=$('fo'), inner=$('fo-inner');
+  if(!fo||!inner) return;
+  if(!active.length&&!hasSpeech){ fo.style.display='none'; return; }
+  fo.style.display='flex'; inner.innerHTML='';
+  active.forEach(f=>{
+    const d=document.createElement('div');
+    d.className='fo-card';
+    d.innerHTML=`
+      ${f.type==='image'&&f.url?`<img src="${f.url}" style="max-height:220px;object-fit:contain;border-radius:14px;margin-bottom:16px;max-width:100%">`:''}
+      <div style="color:#93c5fd;font-size:11px;font-weight:900;text-transform:uppercase;margin-bottom:6px;letter-spacing:.1em">${esc(f.label)}</div>
+      <div style="font-size:clamp(18px,3vw,26px);font-weight:900;line-height:1.3;color:#fff">${esc(f.description)}</div>`;
+    inner.appendChild(d);
+  });
+  if(hasSpeech){
+    const d=document.createElement('div');
+    d.className='fo-speech';
+    d.innerHTML=`<div style="font-size:38px;margin-bottom:14px">🎙️</div>
+      <div style="font-size:clamp(22px,4vw,42px);font-weight:900;line-height:1.3;color:#fff">${esc(s.isSpeakingText)}</div>`;
+    inner.appendChild(d);
+  }
+}
+
+/* ====================================================
+   ECG
+   ==================================================== */
+function startECG(){
+  stopECG();
+  const c=$('ecg-canvas'); if(!c) return;
+  ecgX=0; ecgLY=null; ecgLT=0; ecgBS=0;
+  const v=SS.vitals||{}; ecgBpm=parseInt(v.hr)||72; ecgRhythm=v.rhythmType||'SR'; ecgSweep=v.sweepSpeed||160;
+  ecgRaf=requestAnimationFrame(ecgDraw);
+}
+function stopECG(){ if(ecgRaf){ cancelAnimationFrame(ecgRaf); ecgRaf=null; } }
+
+function ecgDraw(ts){
+  const c=$('ecg-canvas'); if(!c){ ecgRaf=null; return; }
+  const ctx=c.getContext('2d');
+  const W=c.parentElement.offsetWidth, H=c.parentElement.offsetHeight;
+  if(c.width!==W||c.height!==H){ c.width=W; c.height=H; ecgLY=null; }
+  const cy=H/2;
+  if(!ecgLT){ ecgLT=ts; ecgBS=ts; }
+  const dt=ts-ecgLT; ecgLT=ts;
+  const bi=60000/(ecgBpm*ecgAJ);
+  let el=ts-ecgBS;
+  if(el>=bi){ ecgBS=ts; el=0; ecgAJ=ecgRhythm==='Af'?(0.6+Math.random()*0.8):1; }
+  const dx=(ecgSweep*dt)/1000;
+  const dy=ecgDefl(el,ecgRhythm,ts);
+  const fy=cy-dy;
+  ctx.beginPath(); ctx.strokeStyle='#00ff41'; ctx.lineWidth=Math.min(2.5,W/250);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  if(ecgLY!==null&&ecgX>0){ ctx.moveTo(ecgX-dx,ecgLY); ctx.lineTo(ecgX,fy); ctx.stroke(); }
+  ecgLY=fy;
+  ctx.clearRect(ecgX+1,0,44,H);
+  ecgX+=dx; if(ecgX>=W){ ecgX=0; ctx.clearRect(0,0,50,H); }
+  ecgRaf=requestAnimationFrame(ecgDraw);
+}
+
+function ecgDefl(t,r,ts){
+  const PD=100,PRI=r==='1st_AVB'?300:160,QD=80,STD=350;
+  if(r==='VT'){ const vt=(ts%160)/160; return Math.sin(vt*Math.PI*2)*65+Math.sin(vt*Math.PI*4)*15; }
+  const pw=t2=>t2<PD?Math.sin((t2/PD)*Math.PI)*10:0;
+  const qrs=t2=>{ const qs=PRI; if(t2<qs||t2>=qs+QD) return 0; const qp=(t2-qs)/QD;
+    if(qp<.15) return -qp*6*15; if(qp<.4) return -15+((qp-.15)/.25)*135;
+    if(qp<.7) return 120-((qp-.4)/.3)*145; return -25+((qp-.7)/.3)*25; };
+  const tw=t2=>{ const ts2=PRI+QD+50; if(t2<ts2||t2>=ts2+STD) return 0;
+    const tp=(t2-ts2)/STD; const amp=r==='ST_ELEV'?45:20; const se=(r==='ST_ELEV'&&tp<.4)?18:0;
+    return Math.sin(tp*Math.PI)*amp+se; };
+  if(r==='Af') return (Math.random()-.5)*8+qrs(t+PRI)+tw(t+PRI);
+  if(r==='3rd_AVB'){ const pe=(ts%(60000/75)); return pw(pe)+qrs(t+PRI)+tw(t+PRI); }
+  if(r==='2nd_AVB'){ const bn=Math.floor(ts/60000*ecgBpm); return bn%3===0?pw(t):pw(t)+qrs(t)+tw(t); }
+  return pw(t)+qrs(t)+tw(t);
+}
+
+/* ====================================================
+   METRONOME
+   ==================================================== */
+function startMetro(){
+  stopMetro();
+  const tick=()=>{
+    if(!SS.metronome.on||!audioOn) return;
+    try{
+      if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      const a=audioCtx, o=a.createOscillator(), g=a.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(1000,a.currentTime);
+      g.gain.setValueAtTime(.1,a.currentTime); g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.1);
+      o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+.1);
+    }catch(e){}
+    let iv=(60/SS.metronome.bpm)*1000;
+    if(SS.metronome.isIrregular) iv*=(0.6+Math.random()*0.8);
+    metroTimer=setTimeout(tick,iv);
+  };
+  if(SS.metronome.on) tick();
+}
+function stopMetro(){ if(metroTimer){ clearTimeout(metroTimer); metroTimer=null; } }
+
+/* ====================================================
+   INSTRUCTOR — TABS
+   ==================================================== */
+function setTab(tab){
+  activeTab=tab;
+  if(tab==='Full'&&!bodyPart){/* stay at body map */}
+  ['Pre','Init','Vital','Full'].forEach(t=>{
+    const b=$('tb-'+t); if(b) b.className='tab-btn'+(t===tab?' on':'');
+  });
+  renderMain();
+}
+function toggleEdit(){
+  editMode=!editMode;
+  const b=$('edit-btn');
+  b.style.background=editMode?'var(--orange)':'var(--s2)';
+  b.style.color=editMode?'#fff':'var(--t1)';
+  b.textContent=editMode?'編集終了':'編集モード';
+  renderMain();
+}
+
+function renderMain(){
+  const m=$('inst-main'); if(!m) return;
+  if(activeTab==='Vital'){ m.innerHTML=vitalHTML(); return; }
+  if(activeTab==='Init'){ m.innerHTML=initHTML()+findingsHTML('Init'); return; }
+  if(activeTab==='Pre'){ m.innerHTML=findingsHTML('Pre'); return; }
+  if(activeTab==='Full'){
+    if(!bodyPart){ m.innerHTML=bodyMapHTML(); return; }
+    m.innerHTML=`
+      <div class="flex ac jsb" style="margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--b0)">
+        <button onclick="bodyPart=null;renderMain()" style="display:flex;align-items:center;gap:5px;color:var(--t2);font-size:12px;font-weight:800;background:none;padding:8px">← 全身図</button>
+        <div class="flex ac g2">
+          <span class="tag ${bodySide==='front'?'tag-fr':'tag-bk'}">${bodySide==='front'?'前面':'背面'}</span>
+          <span style="font-weight:900;font-size:14px">${esc(bodyPart)}</span>
+        </div>
+      </div>
+      ${findingsHTML('Full')}`;
+  }
+}
+
+/* ====================================================
+   VITAL TAB
+   ==================================================== */
+function vitalHTML(){
+  const rhy=[
+    {id:'SR',l:'正常 (SR)'},{id:'ST',l:'頻脈 (ST)'},{id:'SB',l:'徐脈 (SB)'},
+    {id:'Af',l:'心房細動 (Af)'},{id:'1st_AVB',l:'1度 AVB'},{id:'2nd_AVB',l:'2度 AVB'},
+    {id:'3rd_AVB',l:'3度 AVB'},{id:'VT',l:'心室頻拍 (VT)'},{id:'ST_ELEV',l:'ST上昇'}
+  ];
+  const spd=[{v:80,l:'x0.5 広'},{v:160,l:'x1.0 標準'},{v:320,l:'x2.0 狭'}];
+  return `<div style="max-width:500px;margin:0 auto">
+    <div class="card" style="margin-bottom:0">
+      <h2 style="font-size:19px;font-weight:900;margin-bottom:22px">モニター設定</h2>
+      <div style="margin-bottom:18px">
+        <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">掃引速度</div>
+        <div class="flex g2">${spd.map(s=>`<button class="spd-btn${LV.sweepSpeed==s.v?' on':''}" onclick="setLV('sweepSpeed',${s.v})">${s.l}</button>`).join('')}</div>
+      </div>
+      <div style="margin-bottom:18px">
+        <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">波形タイプ</div>
+        <div class="rhy-grid">${rhy.map(r=>`<button class="rhy-btn${LV.rhythmType===r.id?' on':''}" onclick="setLV('rhythmType','${r.id}')">${r.l}</button>`).join('')}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px">
+        ${['hr','bpSys','bpDia','spo2','rr','temp'].map(v=>`
+          <div>
+            <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;margin-bottom:5px">${v.toUpperCase()}</div>
+            <input class="ifield wf" value="${esc(LV[v]||'')}" onchange="LV['${v}']=this.value" placeholder="--">
+          </div>`).join('')}
+      </div>
+      <button onclick="pushVitals()" class="btn btn-red wf" style="padding:17px;font-size:15px;border-radius:15px">
+        📤 モニターを更新・同期
+      </button>
+    </div>
+  </div>`;
+}
+function setLV(k,v){ LV[k]=v; renderMain(); }
+function pushVitals(){ pushSession({vitals:{...LV},showVitals:true}); }
+
+/* ====================================================
+   INIT TAB (metronome)
+   ==================================================== */
+function initHTML(){
+  const m=SS.metronome;
+  return `<div style="max-width:500px;margin:0 auto 24px">
+    <div class="card">
+      <div class="flex ac jsb" style="margin-bottom:18px">
+        <div class="flex ac g3">
+          <div style="padding:9px;border-radius:11px;background:${m.on?'var(--red)':'var(--s2)'};font-size:20px">💓</div>
+          <h2 style="font-size:17px;font-weight:900">メトロノーム</h2>
+        </div>
+        <button onclick="toggleMetro()" style="padding:9px 22px;border-radius:999px;font-size:12px;font-weight:900;background:${m.on?'var(--red)':'var(--s2)'};color:${m.on?'#fff':'var(--t1)'}">${m.on?'ON（停止）':'OFF（開始）'}</button>
+      </div>
+      <div class="flex g3">
+        <div style="flex:1;background:var(--s2);border-radius:13px;padding:14px;border:2px solid var(--b0)">
+          <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;margin-bottom:3px">BPM</div>
+          <input type="number" value="${m.bpm}" style="width:100%;font-size:26px;font-weight:900;text-align:center;color:var(--t0)" oninput="setMetroBpm(this.value)">
+        </div>
+        <button onclick="toggleIrr()" class="irr${m.isIrregular?' on':''}">
+          <span style="font-size:20px">🔀</span><span style="font-size:11px">不整</span>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+function toggleMetro(){
+  const on=!SS.metronome.on;
+  pushSession({metronome:{...SS.metronome,on}});
+  if(on) startMetro(); else stopMetro();
+  renderMain();
+}
+function setMetroBpm(v){ SS.metronome.bpm=parseInt(v)||100; pushSession({metronome:{...SS.metronome}}); }
+function toggleIrr(){ pushSession({metronome:{...SS.metronome,isIrregular:!SS.metronome.isIrregular}}); renderMain(); }
+
+/* ====================================================
+   BODY MAP
+   ==================================================== */
+function bodyMapHTML(){
+  return `<div style="background:var(--s0);border-radius:var(--r);padding:28px">
+    <div class="flex" style="flex-wrap:wrap;gap:32px;justify-content:center;align-items:flex-start;margin-bottom:24px">
+      ${bodySVG('front')}${bodySVG('back')}
+    </div>
+    <div style="text-align:center;background:var(--s2);border-radius:999px;padding:9px 24px">
+      <span style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.2em">部位をクリックして詳細を表示</span>
+    </div>
+  </div>`;
+}
+
+function bodySVG(side){
+  const lbl=side==='front'?'前面 (FRONT)':'背面 (BACK)';
+  const parts=side==='front'?[
+    ['ellipse','頭部','head','cx="100" cy="45" rx="25" ry="30"'],
+    ['path','胸部','chest','d="M70 85 Q100 80 130 85 L140 140 Q100 145 60 140 Z"'],
+    ['path','腹部','abd','d="M60 140 Q100 145 140 140 L135 190 Q100 200 65 190 Z"'],
+    ['path','上肢','ul','d="M130 85 L165 145 L150 155 L135 105 Z"'],
+    ['path','上肢','ur','d="M70 85 L35 145 L50 155 L65 105 Z"'],
+    ['path','下肢','ll','d="M100 195 L115 380 L145 380 L135 190 Z"'],
+    ['path','下肢','lr','d="M100 195 L85 380 L55 380 L65 190 Z"'],
+  ]:[
+    ['ellipse','後頭部','occ','cx="100" cy="45" rx="25" ry="30"'],
+    ['path','背部','back','d="M70 85 Q100 80 130 85 L135 190 Q100 200 65 190 Z"'],
+    ['path','殿部','glu','d="M65 190 Q100 200 135 190 Q140 220 100 220 Q60 220 65 190 Z"'],
+    ['path','上肢背面','ulb','d="M130 85 L165 145 L150 155 L135 105 Z"'],
+    ['path','上肢背面','urb','d="M70 85 L35 145 L50 155 L65 105 Z"'],
+    ['path','下肢背面','llb','d="M100 220 L115 380 L145 380 L140 200 Z"'],
+    ['path','下肢背面','lrb','d="M100 220 L85 380 L55 380 L60 200 Z"'],
+  ];
+  const textPos=side==='front'?[
+    [100,48,'頭部'],[100,112,'胸部'],[100,165,'腹部'],[42,125,'上肢'],[158,125,'上肢'],[75,285,'下肢'],[125,285,'下肢']
+  ]:[
+    [100,48,'後頭部'],[100,138,'背部'],[100,207,'殿部'],[42,125,'上肢'],[158,125,'上肢'],[75,285,'下肢'],[125,285,'下肢']
+  ];
+  return `<div style="flex:1;min-width:180px;max-width:240px;display:flex;flex-direction:column;align-items:center;gap:10px">
+    <span style="font-size:9px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.4em">${lbl}</span>
+    <svg viewBox="0 0 200 400" style="width:100%;height:auto">
+      ${parts.map(([tag,name,,attrs])=>`<${tag} ${attrs} class="bp" onclick="selectPart('${name}','${side}')"/>`).join('')}
+      ${textPos.map(([x,y,t])=>`<text x="${x}" y="${y}" text-anchor="middle" class="bl">${t}</text>`).join('')}
+    </svg>
+  </div>`;
+}
+function selectPart(part,side){ bodyPart=part; bodySide=side; renderMain(); }
+
+/* ====================================================
+   FINDINGS
+   ==================================================== */
+function findingsHTML(tab){
+  const findings=pf(curCase);
+  let list=(findings[tab]||[]);
+  if(tab==='Full'&&bodyPart) list=list.filter(f=>f.bodyPart===bodyPart&&(!f.side||f.side===bodySide));
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
+    ${list.map(f=>fcHTML(f,tab)).join('')}
+    ${editMode?`<button onclick="openFindingForm(null,'${tab}')" 
+      style="border:3px dashed var(--b1);background:transparent;border-radius:18px;padding:28px;color:var(--t3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;transition:all .2s;font-size:12px;font-weight:900"
+      onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
+      onmouseout="this.style.borderColor='var(--b1)';this.style.color='var(--t3)'">
+      <span style="font-size:26px">+</span>新規所見追加
+    </button>`:''}
+  </div>`;
+}
+
+function fcHTML(f,tab){
+  const aImg=SS.activeFindingIds.includes(f.id);
+  const aSnd=SS.playingSoundUrl===f.url;
+  const aSpk=SS.speechId===f.id;
+  const tl=f.type==='image'?'画像':f.type==='speech'?'音声':'聴診音';
+  const tc=f.type==='image'?'var(--blue)':f.type==='speech'?'var(--blue)':'var(--orange)';
+  let abtn='';
+  if(f.type==='image'){
+    abtn=`<button onclick="togImg('${f.id}')" style="width:100%;padding:11px;border-radius:11px;font-size:12px;font-weight:900;color:#fff;background:${aImg?'var(--red)':'#111'}">${aImg?'解除する':'表示する'}</button>`;
+  }else if(f.type==='speech'){
+    abtn=`<button onclick="togSpk('${f.id}')" style="width:100%;padding:11px;border-radius:11px;font-size:12px;font-weight:900;color:#fff;background:${aSpk?'var(--red)':'var(--blue)'}">${aSpk?'再生停止':'音声を再生'}</button>`;
+  }else{
+    abtn=`<button onclick="togSnd('${f.id}')" style="width:100%;padding:11px;border-radius:11px;font-size:12px;font-weight:900;color:#fff;background:${aSnd?'var(--red)':'var(--orange)'}">${aSnd?'聴診停止':'聴診音を再生'}</button>`;
+  }
+  return `<div class="fc${aImg||aSnd||aSpk?' act':''}">
+    <div class="flex jsb ac" style="margin-bottom:11px">
+      <div>
+        <div style="font-size:10px;font-weight:900;color:${tc};text-transform:uppercase;margin-bottom:3px">${tl}</div>
+        <div style="font-size:14px;font-weight:900">${esc(f.label)}</div>
+      </div>
+      ${editMode?`<div class="flex g2">
+        <button onclick="openFindingForm(${encodeF(f)},'${tab}')" style="background:none;color:#93c5fd;font-size:15px;padding:4px;border-radius:6px">✏️</button>
+        <button onclick="delFinding('${f.id}','${tab}')" style="background:none;color:#fca5a5;font-size:15px;padding:4px;border-radius:6px">🗑️</button>
+      </div>`:''}
+    </div>
+    ${abtn}
+  </div>`;
+}
+
+function encodeF(f){ return "'"+btoa(unescape(encodeURIComponent(JSON.stringify(f))))+"'"; }
+function decodeF(s){ try{ return JSON.parse(decodeURIComponent(escape(atob(s)))); }catch(e){ return null; } }
+
+function togImg(id){
+  const ids=SS.activeFindingIds.includes(id)?SS.activeFindingIds.filter(i=>i!==id):[...SS.activeFindingIds,id];
+  pushSession({activeFindingIds:ids}); renderMain();
+}
+function togSpk(id){
+  const f=getAllFindings().find(x=>x.id===id);
+  const active=SS.speechId===id;
+  pushSession({speechId:active?null:id, speechUrl:active?null:(f?.url||null), isSpeakingText:active?null:(f?.description||f?.label||null)});
+  renderMain();
+}
+function togSnd(id){
+  const f=getAllFindings().find(x=>x.id===id);
+  const playing=SS.playingSoundUrl===f?.url;
+  pushSession({playingSoundUrl:playing?null:(f?.url||null)});
+  renderMain();
+}
+function getAllFindings(){
+  const fs=pf(curCase); return [...(fs.Pre||[]),...(fs.Init||[]),...(fs.Full||[])];
+}
+
+async function delFinding(id,tab){
+  if(!confirm('この所見を削除しますか？')) return;
+  const fs=pf(curCase); fs[tab]=(fs[tab]||[]).filter(f=>f.id!==id);
+  await writeFindings(fs);
+}
+
+async function writeFindings(fs){
+  const s=JSON.stringify(fs);
+  if(isDemo){
+    const c=demoCases.find(c=>c.id===caseId);
+    if(c){ c.findings=fs; curCase={...curCase,findings:fs}; cases=[...demoCases]; }
+  }else{
+    const {error} = await API.update('sim_cases',{findings:s},'id=eq.'+encodeURIComponent(caseId));
+    if(error){ alert('保存エラー: '+(error.message||JSON.stringify(error))); return; }
+    curCase={...curCase,findings:fs};
+    const idx=cases.findIndex(c=>c.id===caseId);
+    if(idx>=0) cases[idx]=curCase;
+  }
+  renderMain();
+}
+
+/* ====================================================
+   FINDING FORM
+   ==================================================== */
+function openFindingForm(enc,tab){
+  ftab=tab;
+  if(enc){ fform=decodeF(enc)||{}; }
+  else{ fform={id:'',type:'image',label:'',url:'',description:'',bodyPart:bodyPart||'頭部',side:bodySide}; }
+  $('fm-label').value=fform.label||'';
+  $('fm-desc').value=fform.description||'';
+  $('fm-title').textContent=fform.id?'所見を編集':'所見の登録';
+  $('fm-save').textContent=fform.id?'更新する':'保存する';
+  setFT(fform.type||'image');
+  const ua=$('fm-upload');
+  ua.textContent=fform.url?'✅ 読込完了（クリックで変更）':'📁 ファイルをアップロード';
+  ua.className='upa'+(fform.url?' ok':'');
+  $('fm-file').value='';
+  show('M-finding');
+}
+
+function setFT(t){
+  fform.type=t;
+  ['image','speech','sound'].forEach(x=>{
+    const b=$('ft-'+x); if(!b) return;
+    b.style.background=x===t?'var(--s0)':'transparent';
+    b.style.color=x===t?'var(--blue)':'var(--t2)';
+  });
+  $('fm-file').accept=t==='image'?'image/*':'audio/*';
+}
+
+async function onFileChange(e){
+  const f=e.target.files[0]; if(!f) return;
+  const ua=$('fm-upload'); ua.textContent='⏳ 処理中...'; ua.className='upa';
+  const reader=new FileReader();
+  reader.onload=async(ev)=>{
+    let r=ev.target.result;
+    if(f.type.startsWith('image/')) r=await compImg(r);
+    fform.url=r; ua.textContent='✅ 読込完了'; ua.className='upa ok';
+  };
+  reader.readAsDataURL(f);
+}
+
+function compImg(b64){ return new Promise(res=>{
+  const img=new Image(); img.src=b64;
+  img.onload=()=>{
+    const c=document.createElement('canvas'); let w=img.width,h=img.height;
+    const M=800; if(w>h){ if(w>M){ h*=M/w; w=M; } }else{ if(h>M){ w*=M/h; h=M; } }
+    c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
+    res(c.toDataURL('image/jpeg',.7));
+  };
+}); }
+
+async function saveFinding(){
+  fform.label=$('fm-label').value.trim();
+  fform.description=$('fm-desc').value.trim();
+  if(!fform.label){ alert('タイトルを入力してください'); return; }
+  const fs=pf(curCase);
+  if(!fs[ftab]) fs[ftab]=[];
+  if(fform.id){
+    fs[ftab]=fs[ftab].map(x=>x.id===fform.id?{...fform}:x);
+  }else{
+    fs[ftab].push({...fform,id:''+Date.now(),side:bodySide});
+  }
+  await writeFindings(fs);
+  closeModal('M-finding');
+}
+
+/* ====================================================
+   UTILS
+   ==================================================== */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ ['M-addcase','M-finding'].forEach(closeModal); } });
+
+/* ====================================================
+   SQL SETUP (run in Supabase SQL Editor)
+   ====================================================
+   -- sim_cases
+   create table if not exists public.sim_cases (
+     id uuid primary key default gen_random_uuid(),
+     title text not null,
+     findings jsonb default '{"Pre":[],"Init":[],"Full":[]}',
+     created_at timestamptz default now()
+   );
+   create index if not exists sim_cases_created_at on sim_cases(created_at desc);
+
+   -- sim_sessions (case_id は text 型 — uuid 型にしないこと)
+   create table if not exists public.sim_sessions (
+     id uuid primary key default gen_random_uuid(),
+     case_id text unique not null,
+     active_finding_ids jsonb default '[]',
+     playing_sound_url text,
+     is_speaking_text text,
+     speech_url text,
+     speech_id text,
+     metronome jsonb default '{"on":false,"bpm":100,"isIrregular":false}',
+     vitals jsonb default '{}',
+     show_vitals boolean default false,
+     updated_at timestamptz default now()
+   );
+   create index if not exists sim_sessions_case_id on sim_sessions(case_id);
+
+   -- RLS policies
+   alter table public.sim_cases enable row level security;
+   alter table public.sim_sessions enable row level security;
+   create policy "public_all_cases"   on public.sim_cases   for all using (true) with check (true);
+   create policy "public_all_sessions" on public.sim_sessions for all using (true) with check (true);
+
+   -- Enable realtime on sim_sessions (in Supabase dashboard:
+   --   Database > Replication > sim_sessions: ON)
+   ==================================================== */
+</script>
+</body>
+</html>
