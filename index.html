@@ -642,7 +642,9 @@ async function fetchSession(){
 }
 
 function applySession(data){
-  const prev={...SS};
+  // speechId は比較用に先に取得（スプレッドコピーでは参照が変わるため）
+  const prevSpeechId = SS.speechId||'';
+  const prev={...SS, speechId: prevSpeechId};
   try{
     if(data.active_finding_ids!=null) SS.activeFindingIds=data.active_finding_ids;
     if(data.playing_sound_url!==undefined) SS.playingSoundUrl=data.playing_sound_url;
@@ -694,6 +696,33 @@ function unsub(){
 /* ====================================================
    PARTICIPANT STATE
    ==================================================== */
+
+// base64 または URL どちらでも再生できるヘルパー
+function playAudioData(audioEl, src, loop){
+  try{
+    audioEl.loop = loop;
+    if(src.startsWith('data:')){
+      // base64 → Blob URL に変換して再生（iOS Safari対応）
+      const [header, b64] = src.split(',');
+      const mime = header.match(/:(.*?);/)[1];
+      const bin  = atob(b64);
+      const arr  = new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+      const blob = new Blob([arr], {type:mime});
+      const url  = URL.createObjectURL(blob);
+      // 古いBlobURLを解放
+      if(audioEl.dataset.blobUrl){ URL.revokeObjectURL(audioEl.dataset.blobUrl); }
+      audioEl.dataset.blobUrl = url;
+      audioEl.src = url;
+    } else {
+      audioEl.src = src;
+    }
+    audioEl.currentTime = 0;
+    const p = audioEl.play();
+    if(p && p.catch) p.catch(e=>console.warn('audio play failed:', e.message));
+  }catch(e){ console.warn('playAudioData error:', e); }
+}
+
 function applyPartState(s,prev){
   // vitals
   const v=s.vitals||{};
@@ -719,15 +748,21 @@ function applyPartState(s,prev){
   if(audioOn){
     const ba=$('bg-audio');
     if(s.playingSoundUrl){
-      if(ba.src!==s.playingSoundUrl){
-        ba.src=s.playingSoundUrl;
-        ba.play().catch(e=>{ console.warn('bg-audio play:', e); });
+      // src比較はIDで行う（base64は長すぎてsrc比較が不安定）
+      if(ba.dataset.soundId !== s.playingSoundUrl.slice(-32)){
+        ba.dataset.soundId = s.playingSoundUrl.slice(-32);
+        playAudioData(ba, s.playingSoundUrl, true);
       }
-    } else{ ba.pause(); ba.src=''; }
-    if(s.speechUrl&&s.speechId!==prev?.speechId){
+    } else {
+      if(!ba.paused){ ba.pause(); }
+      ba.dataset.soundId='';
+    }
+    // speech: IDが変わったときだけ再生
+    const prevSpeechId = prev?.speechId||'';
+    const curSpeechId  = s.speechId||'';
+    if(s.speechUrl && curSpeechId && curSpeechId !== prevSpeechId){
       const sa=$('sp-audio');
-      sa.src=s.speechUrl;
-      sa.play().catch(e=>{ console.warn('sp-audio play:', e); });
+      playAudioData(sa, s.speechUrl, false);
     }
   }
 }
