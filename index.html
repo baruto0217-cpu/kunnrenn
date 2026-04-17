@@ -103,6 +103,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 /* Finding card */
 .fc{background:var(--s0);border:2px solid var(--b0);border-radius:18px;padding:18px;transition:border-color .15s,box-shadow .15s}
 .fc.act{border-color:var(--red);box-shadow:0 0 0 3px rgba(224,53,53,.1)}
+.fc button{min-height:48px}  /* タッチターゲット最小48px */
 /* Body map */
 .bp{cursor:pointer;transition:fill .18s,stroke .18s;fill:#f1f0e8;stroke:#ccc;stroke-width:1}
 .bp:hover{fill:rgba(59,130,246,.15);stroke:#3b82f6}
@@ -122,11 +123,31 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 ::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
 @media(max-width:640px){
   .role-grid{grid-template-columns:1fr}
-  .inst-side{width:68px;padding:8px}
-  .tab-btn{font-size:8px;padding:10px 4px}
-  .inst-main{padding:16px}
-  #pv-wrap{flex-direction:row;flex-wrap:wrap;width:100%!important;height:auto!important}
-  .vv{font-size:clamp(22px,4vw,40px)}
+  /* サイドバー → 底部タブバー */
+  .inst-side{
+    position:fixed;bottom:0;left:0;right:0;
+    width:100%!important;height:60px;
+    flex-direction:row;
+    padding:0;z-index:20;
+    border-right:none;border-top:1px solid var(--b0);
+    box-shadow:0 -4px 20px rgba(0,0,0,.06);
+  }
+  .tab-btn{flex:1;flex-direction:row;gap:6px;font-size:11px;padding:0 4px;border-radius:0;height:60px}
+  .tab-btn.on{transform:none;box-shadow:none;background:var(--s2);color:var(--red);border-top:3px solid var(--red)}
+  .tab-icon{font-size:20px}
+  .inst-main{padding:14px;padding-bottom:76px}  /* 底部タブ分の余白 */
+  .inst-body{flex-direction:column}
+  #pv-wrap{flex-direction:row!important;flex-wrap:nowrap!important;width:100%!important;height:auto!important;overflow-x:auto;gap:6px!important}
+  #pv-wrap .vp{flex:1;min-width:70px;padding:10px 8px!important}
+  .vv{font-size:clamp(18px,3.5vw,36px)!important}
+  .vl{font-size:9px!important}
+  #part-body{flex-direction:column!important}
+  #ecg-area{min-height:200px}
+  /* 所見カードをモバイルで1列 */
+  .fc{padding:14px}
+  /* モーダルを全画面に近く */
+  .modal{border-radius:20px 20px 0 0;position:fixed;bottom:0;left:0;right:0;max-width:100%;margin:0;padding:24px 20px 36px}
+  .modal-bg{align-items:flex-end;padding:0}
 }
 </style>
 </head>
@@ -153,7 +174,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
         onkeydown="if(event.key==='Enter') doLogin()">
     </div>
     <div id="login-error" style="display:none;background:rgba(224,53,53,.2);border:1px solid rgba(224,53,53,.4);border-radius:10px;padding:10px 14px;font-size:13px;color:#fca5a5"></div>
-    <button onclick="doLogin()" id="login-btn" style="background:var(--red);color:#fff;padding:16px;border-radius:13px;font-size:16px;font-weight:900;margin-top:4px">入室する</button>
+    <button onclick="doLogin()" id="login-btn" style="background:var(--red);color:#fff;padding:18px;border-radius:13px;font-size:16px;font-weight:900;margin-top:4px;min-height:56px">入室する</button>
   </div>
 </div>
 
@@ -189,7 +210,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 <!-- Case list -->
 <div id="G-cases" style="display:none">
   <div class="cases-hdr">
-    <button onclick="goLogin()" class="btn btn-ghost">← ログイン</button>
+    <button onclick="goLogin()" class="btn btn-ghost" style="min-height:44px;min-width:44px">← ログイン</button>
     <h1 style="font-size:20px;font-weight:900">症例選択 <span id="room-label" style="font-size:12px;font-weight:500;opacity:.4"></span></h1>
     <div style="width:80px"></div>
   </div>
@@ -231,9 +252,9 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
     <div class="flex ac g2"><div class="ldot"></div><span style="font-size:10px;font-weight:900;letter-spacing:.4em;color:rgba(255,255,255,.22)">LIVE</span></div>
     <button onclick="exitAndLogout()" style="background:none;color:rgba(255,255,255,.22);font-size:10px;font-weight:900;letter-spacing:.12em;padding:6px 12px;border:1px solid rgba(255,255,255,.07);border-radius:999px">退室</button>
   </nav>
-  <div style="flex:1;display:flex;gap:12px;min-height:0" id="part-body">
+  <div style="flex:1;display:flex;gap:12px;min-height:0;flex-wrap:wrap" id="part-body">
     <!-- vitals column -->
-    <div id="pv-wrap" style="display:flex;flex-direction:column;gap:10px;width:180px;flex-shrink:0">
+    <div id="pv-wrap" style="display:flex;flex-direction:column;gap:8px;width:160px;flex-shrink:0;min-width:0">
       <div class="vp f1"><div class="vl" style="color:#ff4444">HR</div><div class="vv" id="pv-hr" style="color:#ff4444">--</div></div>
       <div class="vp f1"><div class="vl" style="color:#4ade80">BP</div><div class="vv" id="pv-bp" style="color:#4ade80;font-size:clamp(18px,3.5vw,36px)">--/--</div></div>
       <div class="vp f1"><div class="vl" style="color:#60a5fa">SpO₂</div><div class="vv" id="pv-spo2" style="color:#60a5fa">--</div></div>
@@ -683,10 +704,19 @@ function startECG(){
   stopECG();
   const c=$('ecg-canvas'); if(!c) return;
   ecgX=0; ecgLY=null; ecgLT=0; ecgBS=0;
-  const v=SS.vitals||{}; ecgBpm=parseInt(v.hr)||72; ecgRhythm=v.rhythmType||'SR'; ecgSweep=v.sweepSpeed||160;
+  ecgPBS=0;        // P波独立ビート開始（3度AVB用）
+  ecgVTPhase=0;    // VT位相
+  ecg2ndCount=0;   // 2度AVB拍カウント
+  const v=SS.vitals||{};
+  ecgBpm=parseInt(v.hr)||72;
+  ecgRhythm=v.rhythmType||'SR';
+  ecgSweep=v.sweepSpeed||160;
   ecgRaf=requestAnimationFrame(ecgDraw);
 }
 function stopECG(){ if(ecgRaf){ cancelAnimationFrame(ecgRaf); ecgRaf=null; } }
+
+// ECG用追加ステート
+let ecgPBS=0, ecgVTPhase=0, ecg2ndCount=0;
 
 function ecgDraw(ts){
   const c=$('ecg-canvas'); if(!c){ ecgRaf=null; return; }
@@ -694,13 +724,29 @@ function ecgDraw(ts){
   const W=c.parentElement.offsetWidth, H=c.parentElement.offsetHeight;
   if(c.width!==W||c.height!==H){ c.width=W; c.height=H; ecgLY=null; }
   const cy=H/2;
-  if(!ecgLT){ ecgLT=ts; ecgBS=ts; }
+  if(!ecgLT){ ecgLT=ts; ecgBS=ts; ecgPBS=ts; }
   const dt=ts-ecgLT; ecgLT=ts;
-  const bi=60000/(ecgBpm*ecgAJ);
+
+  // メインビート間隔（Afはジッタあり）
+  const bi=60000/(ecgBpm*(ecgRhythm==='Af'?ecgAJ:1));
   let el=ts-ecgBS;
-  if(el>=bi){ ecgBS=ts; el=0; ecgAJ=ecgRhythm==='Af'?(0.6+Math.random()*0.8):1; }
+  if(el>=bi){
+    ecgBS=ts; el=0;
+    ecgAJ=ecgRhythm==='Af'?(0.6+Math.random()*0.8):1;
+    // 2度AVB: 拍カウント更新
+    if(ecgRhythm==='2nd_AVB'){ ecg2ndCount=(ecg2ndCount+1)%3; }
+  }
+
+  // 3度AVB用 P波独立ビート（75bpm固定）
+  const pbi=60000/75;
+  if(ecgRhythm==='3rd_AVB' && ts-ecgPBS>=pbi){ ecgPBS=ts; }
+  const pel=ecgRhythm==='3rd_AVB'?ts-ecgPBS:0;
+
+  // VT位相を時間から累積（リセット対応）
+  if(ecgRhythm==='VT') ecgVTPhase+=dt/160;
+
   const dx=(ecgSweep*dt)/1000;
-  const dy=ecgDefl(el,ecgRhythm,ts);
+  const dy=ecgDefl(el,pel,ecgRhythm);
   const fy=cy-dy;
   ctx.beginPath(); ctx.strokeStyle='#00ff41'; ctx.lineWidth=Math.min(2.5,W/250);
   ctx.lineCap='round'; ctx.lineJoin='round';
@@ -711,20 +757,68 @@ function ecgDraw(ts){
   ecgRaf=requestAnimationFrame(ecgDraw);
 }
 
-function ecgDefl(t,r,ts){
-  const PD=100,PRI=r==='1st_AVB'?300:160,QD=80,STD=350;
-  if(r==='VT'){ const vt=(ts%160)/160; return Math.sin(vt*Math.PI*2)*65+Math.sin(vt*Math.PI*4)*15; }
-  const pw=t2=>t2<PD?Math.sin((t2/PD)*Math.PI)*10:0;
-  const qrs=t2=>{ const qs=PRI; if(t2<qs||t2>=qs+QD) return 0; const qp=(t2-qs)/QD;
-    if(qp<.15) return -qp*6*15; if(qp<.4) return -15+((qp-.15)/.25)*135;
-    if(qp<.7) return 120-((qp-.4)/.3)*145; return -25+((qp-.7)/.3)*25; };
-  const tw=t2=>{ const ts2=PRI+QD+50; if(t2<ts2||t2>=ts2+STD) return 0;
-    const tp=(t2-ts2)/STD; const amp=r==='ST_ELEV'?45:20; const se=(r==='ST_ELEV'&&tp<.4)?18:0;
-    return Math.sin(tp*Math.PI)*amp+se; };
-  if(r==='Af') return (Math.random()-.5)*8+qrs(t+PRI)+tw(t+PRI);
-  if(r==='3rd_AVB'){ const pe=(ts%(60000/75)); return pw(pe)+qrs(t+PRI)+tw(t+PRI); }
-  if(r==='2nd_AVB'){ const bn=Math.floor(ts/60000*ecgBpm); return bn%3===0?pw(t):pw(t)+qrs(t)+tw(t); }
-  return pw(t)+qrs(t)+tw(t);
+function ecgDefl(t, pel, r){
+  // 基本パラメータ
+  const PD=100, QD=80, STD=260;
+  const PRI = r==='1st_AVB' ? 280 : 160;  // 1度AVB: PR延長
+
+  // VT: 正弦波ベースのワイドQRS
+  if(r==='VT'){
+    const vt=(ecgVTPhase%1);
+    return Math.sin(vt*Math.PI*2)*70 + Math.sin(vt*Math.PI*4)*18;
+  }
+
+  // P波（半正弦波）
+  const pw = t2 => (t2>=0 && t2<PD) ? Math.sin((t2/PD)*Math.PI)*10 : 0;
+
+  // QRS波（鋭いスパイク：Q小→R大→S小）
+  const qrs = t2 => {
+    const qs=PRI;
+    if(t2<qs || t2>=qs+QD) return 0;
+    const qp=(t2-qs)/QD;
+    if(qp<0.10) return -qp/0.10 * 8;           // Q波（小さく下向き）
+    if(qp<0.35) return -8+((qp-0.10)/0.25)*128; // R上昇
+    if(qp<0.60) return 120-((qp-0.35)/0.25)*132;// R下降→S
+    if(qp<0.80) return -12+((qp-0.60)/0.20)*12; // S回復
+    return 0;
+  };
+
+  // ST-T波
+  const stTwave = t2 => {
+    const stStart = PRI+QD;
+    if(t2 < stStart) return 0;
+    const stEl = t2 - stStart;
+    // ST上昇: QRS直後から平坦に持ち上がる
+    const stElev = r==='ST_ELEV' ? 18 : 0;
+    // ST部分（40ms平坦）
+    if(stEl < 40) return stElev;
+    // T波（なだらかな山）
+    const tEl = stEl - 40;
+    if(tEl >= STD) return 0;
+    const tp = tEl/STD;
+    const tAmp = r==='ST_ELEV' ? 42 : 22;
+    return Math.sin(tp*Math.PI)*tAmp + stElev*(1-tp);
+  };
+
+  // Af: P波なし・基線ゆらぎ・RR不整
+  if(r==='Af'){
+    const noise=(Math.random()-0.5)*5 + Math.sin(t*0.08)*2;
+    return noise + qrs(t) + stTwave(t);
+  }
+
+  // 3度AVB: P波とQRSが完全独立
+  if(r==='3rd_AVB'){
+    return pw(pel) + qrs(t) + stTwave(t);
+  }
+
+  // 2度AVB（Mobitz II型）: 3拍に1回QRS脱落（P波のみ）
+  if(r==='2nd_AVB'){
+    if(ecg2ndCount===0) return pw(t); // QRS脱落（P波のみ）
+    return pw(t) + qrs(t) + stTwave(t);
+  }
+
+  // SR / ST / SB / 1st_AVB / ST_ELEV: 標準波形
+  return pw(t) + qrs(t) + stTwave(t);
 }
 
 /* ====================================================
@@ -793,9 +887,15 @@ function renderMain(){
    ==================================================== */
 function vitalHTML(){
   const rhy=[
-    {id:'SR',l:'正常 (SR)'},{id:'ST',l:'頻脈 (ST)'},{id:'SB',l:'徐脈 (SB)'},
-    {id:'Af',l:'心房細動 (Af)'},{id:'1st_AVB',l:'1度 AVB'},{id:'2nd_AVB',l:'2度 AVB'},
-    {id:'3rd_AVB',l:'3度 AVB'},{id:'VT',l:'心室頻拍 (VT)'},{id:'ST_ELEV',l:'ST上昇'}
+    {id:'SR',      l:'正常 (SR)',      hr:72 },
+    {id:'ST',      l:'頻脈 (ST)',      hr:120},
+    {id:'SB',      l:'徐脈 (SB)',      hr:48 },
+    {id:'Af',      l:'心房細動 (Af)', hr:88 },
+    {id:'1st_AVB', l:'1度 AVB',        hr:65 },
+    {id:'2nd_AVB', l:'2度 AVB',        hr:60 },
+    {id:'3rd_AVB', l:'3度 AVB',        hr:40 },
+    {id:'VT',      l:'心室頻拍 (VT)', hr:180},
+    {id:'ST_ELEV', l:'ST上昇',         hr:88 },
   ];
   const spd=[{v:80,l:'x0.5 広'},{v:160,l:'x1.0 標準'},{v:320,l:'x2.0 狭'}];
   return `<div style="max-width:500px;margin:0 auto">
@@ -807,7 +907,7 @@ function vitalHTML(){
       </div>
       <div style="margin-bottom:18px">
         <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">波形タイプ</div>
-        <div class="rhy-grid">${rhy.map(r=>`<button class="rhy-btn${LV.rhythmType===r.id?' on':''}" onclick="setLV('rhythmType','${r.id}')">${r.l}</button>`).join('')}</div>
+        <div class="rhy-grid">${rhy.map(r=>`<button class="rhy-btn${LV.rhythmType===r.id?' on':''}" onclick="setLV('rhythmType','${r.id}')" style="line-height:1.4">${r.l}<span style="display:block;font-size:9px;opacity:.6;font-weight:600">${r.hr} bpm</span></button>`).join('')}</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px">
         ${['hr','bpSys','bpDia','spo2','rr','temp'].map(v=>`
@@ -822,7 +922,26 @@ function vitalHTML(){
     </div>
   </div>`;
 }
-function setLV(k,v){ LV[k]=v; renderMain(); }
+// リズム選択時にHRを自動セット
+const RHYTHM_DEFAULT_HR = {
+  'SR':      72,
+  'ST':     120,   // 洞性頻脈
+  'SB':      48,   // 洞性徐脈
+  'Af':      88,
+  '1st_AVB': 65,
+  '2nd_AVB': 60,
+  '3rd_AVB': 40,   // 補充収縮（遅い）
+  'VT':     180,
+  'ST_ELEV': 88,
+};
+function setLV(k,v){
+  LV[k]=v;
+  // リズム変更時はHRを推奨値に自動セット
+  if(k==='rhythmType' && RHYTHM_DEFAULT_HR[v]!==undefined){
+    LV.hr = String(RHYTHM_DEFAULT_HR[v]);
+  }
+  renderMain();
+}
 function pushVitals(){ pushSession({vitals:{...LV},showVitals:true}); }
 
 /* ====================================================
@@ -864,48 +983,90 @@ function toggleIrr(){ pushSession({metronome:{...SS.metronome,isIrregular:!SS.me
    BODY MAP
    ==================================================== */
 function bodyMapHTML(){
-  return `<div style="background:var(--s0);border-radius:var(--r);padding:28px">
-    <div class="flex" style="flex-wrap:wrap;gap:32px;justify-content:center;align-items:flex-start;margin-bottom:24px">
-      ${bodySVG('front')}${bodySVG('back')}
+  // 前面・背面それぞれのパーツ定義（選択部位は変更しない）
+  const frontParts = [
+    { name:'頭部',   side:'front', icon:'🧠', color:'#e0e7ff', border:'#6366f1' },
+    { name:'胸部',   side:'front', icon:'❤️', color:'#fce7f3', border:'#ec4899' },
+    { name:'腹部',   side:'front', icon:'🫁', color:'#fef3c7', border:'#f59e0b' },
+    { name:'上肢',   side:'front', icon:'💪', color:'#d1fae5', border:'#10b981' },
+    { name:'下肢',   side:'front', icon:'🦵', color:'#dbeafe', border:'#3b82f6' },
+  ];
+  const backParts = [
+    { name:'後頭部', side:'back',  icon:'🔵', color:'#e0e7ff', border:'#6366f1' },
+    { name:'背部',   side:'back',  icon:'🟣', color:'#f3e8ff', border:'#a855f7' },
+    { name:'殿部',   side:'back',  icon:'🟤', color:'#fef3c7', border:'#f59e0b' },
+    { name:'上肢背面',side:'back', icon:'💪', color:'#d1fae5', border:'#10b981' },
+    { name:'下肢背面',side:'back', icon:'🦵', color:'#dbeafe', border:'#3b82f6' },
+  ];
+
+  const mkBtn = (p) => {
+    const findings = pf(curCase);
+    const cnt = (findings['Full']||[]).filter(f=>f.bodyPart===p.name&&(!f.side||f.side===p.side)).length;
+    const badge = cnt>0 ? `<span style="position:absolute;top:8px;right:8px;background:var(--red);color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:2px 7px;line-height:1">${cnt}</span>` : '';
+    return `<button onclick="selectPart('${p.name}','${p.side}')"
+      style="position:relative;display:flex;align-items:center;gap:12px;padding:14px 16px;background:${p.color};border:2px solid ${p.border};border-radius:14px;cursor:pointer;text-align:left;transition:all .15s;width:100%;-webkit-tap-highlight-color:transparent"
+      onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform=''" ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform=''">
+      <span style="font-size:24px;flex-shrink:0">${p.icon}</span>
+      <div>
+        <div style="font-size:15px;font-weight:900;color:#111">${p.name}</div>
+        <div style="font-size:11px;color:#666;margin-top:1px">${cnt>0?cnt+'件の所見':'所見なし'}</div>
+      </div>
+      ${badge}
+      <span style="margin-left:auto;color:#aaa;font-size:18px;flex-shrink:0">›</span>
+    </button>`;
+  };
+
+  return `
+  <div style="max-width:720px;margin:0 auto">
+    <!-- 人体SVG + ボタン の2カラム -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+
+      <!-- 前面 -->
+      <div style="background:var(--s0);border-radius:20px;padding:20px;border:1.5px solid var(--b0)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:900;padding:3px 10px;border-radius:999px;letter-spacing:.05em">前面</span>
+          <svg viewBox="0 0 60 120" style="width:36px;height:auto;opacity:.35">
+            <ellipse cx="30" cy="12" rx="8" ry="9" fill="#64748b"/>
+            <rect x="2" y="2" width="2" height="6" rx="1" fill="#64748b" transform="translate(20,18)"/>
+            <path d="M20 22 Q30 20 40 22 L42 48 Q30 50 18 48 Z" fill="#64748b"/>
+            <path d="M18 48 Q30 50 42 48 L40 68 Q30 72 20 68 Z" fill="#64748b" opacity=".7"/>
+            <path d="M40 22 L52 44 L47 47 L38 28 Z" fill="#64748b" opacity=".6"/>
+            <path d="M20 22 L8 44 L13 47 L22 28 Z" fill="#64748b" opacity=".6"/>
+            <path d="M30 68 L33 118 L41 118 L38 66 Z" fill="#64748b" opacity=".6"/>
+            <path d="M30 68 L27 118 L19 118 L22 66 Z" fill="#64748b" opacity=".6"/>
+          </svg>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${frontParts.map(mkBtn).join('')}
+        </div>
+      </div>
+
+      <!-- 背面 -->
+      <div style="background:var(--s0);border-radius:20px;padding:20px;border:1.5px solid var(--b0)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <span style="background:#f3e8ff;color:#7c3aed;font-size:10px;font-weight:900;padding:3px 10px;border-radius:999px;letter-spacing:.05em">背面</span>
+          <svg viewBox="0 0 60 120" style="width:36px;height:auto;opacity:.35;transform:scaleX(-1)">
+            <ellipse cx="30" cy="12" rx="8" ry="9" fill="#64748b"/>
+            <path d="M20 22 Q30 20 40 22 L42 68 Q30 72 18 68 Z" fill="#64748b"/>
+            <path d="M18 68 Q30 72 42 68 Q44 78 30 80 Q16 78 18 68 Z" fill="#64748b" opacity=".7"/>
+            <path d="M40 22 L52 44 L47 47 L38 28 Z" fill="#64748b" opacity=".6"/>
+            <path d="M20 22 L8 44 L13 47 L22 28 Z" fill="#64748b" opacity=".6"/>
+            <path d="M30 80 L33 118 L41 118 L40 78 Z" fill="#64748b" opacity=".6"/>
+            <path d="M30 80 L27 118 L19 118 L20 78 Z" fill="#64748b" opacity=".6"/>
+          </svg>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${backParts.map(mkBtn).join('')}
+        </div>
+      </div>
+
     </div>
-    <div style="text-align:center;background:var(--s2);border-radius:999px;padding:9px 24px">
-      <span style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.2em">部位をクリックして詳細を表示</span>
+    <div style="text-align:center;margin-top:16px;color:var(--t3);font-size:12px;font-weight:700">
+      部位をタップして所見を表示・操作
     </div>
   </div>`;
 }
 
-function bodySVG(side){
-  const lbl=side==='front'?'前面 (FRONT)':'背面 (BACK)';
-  const parts=side==='front'?[
-    ['ellipse','頭部','head','cx="100" cy="45" rx="25" ry="30"'],
-    ['path','胸部','chest','d="M70 85 Q100 80 130 85 L140 140 Q100 145 60 140 Z"'],
-    ['path','腹部','abd','d="M60 140 Q100 145 140 140 L135 190 Q100 200 65 190 Z"'],
-    ['path','上肢','ul','d="M130 85 L165 145 L150 155 L135 105 Z"'],
-    ['path','上肢','ur','d="M70 85 L35 145 L50 155 L65 105 Z"'],
-    ['path','下肢','ll','d="M100 195 L115 380 L145 380 L135 190 Z"'],
-    ['path','下肢','lr','d="M100 195 L85 380 L55 380 L65 190 Z"'],
-  ]:[
-    ['ellipse','後頭部','occ','cx="100" cy="45" rx="25" ry="30"'],
-    ['path','背部','back','d="M70 85 Q100 80 130 85 L135 190 Q100 200 65 190 Z"'],
-    ['path','殿部','glu','d="M65 190 Q100 200 135 190 Q140 220 100 220 Q60 220 65 190 Z"'],
-    ['path','上肢背面','ulb','d="M130 85 L165 145 L150 155 L135 105 Z"'],
-    ['path','上肢背面','urb','d="M70 85 L35 145 L50 155 L65 105 Z"'],
-    ['path','下肢背面','llb','d="M100 220 L115 380 L145 380 L140 200 Z"'],
-    ['path','下肢背面','lrb','d="M100 220 L85 380 L55 380 L60 200 Z"'],
-  ];
-  const textPos=side==='front'?[
-    [100,48,'頭部'],[100,112,'胸部'],[100,165,'腹部'],[42,125,'上肢'],[158,125,'上肢'],[75,285,'下肢'],[125,285,'下肢']
-  ]:[
-    [100,48,'後頭部'],[100,138,'背部'],[100,207,'殿部'],[42,125,'上肢'],[158,125,'上肢'],[75,285,'下肢'],[125,285,'下肢']
-  ];
-  return `<div style="flex:1;min-width:180px;max-width:240px;display:flex;flex-direction:column;align-items:center;gap:10px">
-    <span style="font-size:9px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.4em">${lbl}</span>
-    <svg viewBox="0 0 200 400" style="width:100%;height:auto">
-      ${parts.map(([tag,name,,attrs])=>`<${tag} ${attrs} class="bp" onclick="selectPart('${name}','${side}')"/>`).join('')}
-      ${textPos.map(([x,y,t])=>`<text x="${x}" y="${y}" text-anchor="middle" class="bl">${t}</text>`).join('')}
-    </svg>
-  </div>`;
-}
 function selectPart(part,side){ bodyPart=part; bodySide=side; renderMain(); }
 
 /* ====================================================
