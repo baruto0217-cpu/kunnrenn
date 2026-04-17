@@ -983,87 +983,112 @@ function toggleIrr(){ pushSession({metronome:{...SS.metronome,isIrregular:!SS.me
    BODY MAP
    ==================================================== */
 function bodyMapHTML(){
-  // 前面・背面それぞれのパーツ定義（選択部位は変更しない）
-  const frontParts = [
-    { name:'頭部',   side:'front', icon:'🧠', color:'#e0e7ff', border:'#6366f1' },
-    { name:'胸部',   side:'front', icon:'❤️', color:'#fce7f3', border:'#ec4899' },
-    { name:'腹部',   side:'front', icon:'🫁', color:'#fef3c7', border:'#f59e0b' },
-    { name:'上肢',   side:'front', icon:'💪', color:'#d1fae5', border:'#10b981' },
-    { name:'下肢',   side:'front', icon:'🦵', color:'#dbeafe', border:'#3b82f6' },
-  ];
-  const backParts = [
-    { name:'後頭部', side:'back',  icon:'🔵', color:'#e0e7ff', border:'#6366f1' },
-    { name:'背部',   side:'back',  icon:'🟣', color:'#f3e8ff', border:'#a855f7' },
-    { name:'殿部',   side:'back',  icon:'🟤', color:'#fef3c7', border:'#f59e0b' },
-    { name:'上肢背面',side:'back', icon:'💪', color:'#d1fae5', border:'#10b981' },
-    { name:'下肢背面',side:'back', icon:'🦵', color:'#dbeafe', border:'#3b82f6' },
-  ];
+  const findings = pf(curCase);
+  const cnt = (part,side) => (findings['Full']||[]).filter(f=>f.bodyPart===part&&(!f.side||f.side===side)).length;
 
-  const mkBtn = (p) => {
-    const findings = pf(curCase);
-    const cnt = (findings['Full']||[]).filter(f=>f.bodyPart===p.name&&(!f.side||f.side===p.side)).length;
-    const badge = cnt>0 ? `<span style="position:absolute;top:8px;right:8px;background:var(--red);color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:2px 7px;line-height:1">${cnt}</span>` : '';
-    return `<button onclick="selectPart('${p.name}','${p.side}')"
-      style="position:relative;display:flex;align-items:center;gap:12px;padding:14px 16px;background:${p.color};border:2px solid ${p.border};border-radius:14px;cursor:pointer;text-align:left;transition:all .15s;width:100%;-webkit-tap-highlight-color:transparent"
-      onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform=''" ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform=''">
-      <span style="font-size:24px;flex-shrink:0">${p.icon}</span>
-      <div>
-        <div style="font-size:15px;font-weight:900;color:#111">${p.name}</div>
-        <div style="font-size:11px;color:#666;margin-top:1px">${cnt>0?cnt+'件の所見':'所見なし'}</div>
+  // SVG人形（クリック可能・所見バッジ付き）
+  const svgFigure = (side) => {
+    const isFront = side==='front';
+    const parts = isFront ? [
+      ['ellipse','頭部', 'cx="100" cy="45" rx="25" ry="30"'],
+      ['path','胸部',    'd="M70 85 Q100 80 130 85 L140 140 Q100 145 60 140 Z"'],
+      ['path','腹部',    'd="M60 140 Q100 145 140 140 L135 190 Q100 200 65 190 Z"'],
+      ['path','上肢',    'd="M130 85 L165 145 L150 155 L135 105 Z"'],
+      ['path','上肢',    'd="M70 85 L35 145 L50 155 L65 105 Z"'],
+      ['path','下肢',    'd="M100 195 L115 380 L145 380 L135 190 Z"'],
+      ['path','下肢',    'd="M100 195 L85 380 L55 380 L65 190 Z"'],
+    ] : [
+      ['ellipse','後頭部','cx="100" cy="45" rx="25" ry="30"'],
+      ['path','背部',    'd="M70 85 Q100 80 130 85 L135 190 Q100 200 65 190 Z"'],
+      ['path','殿部',    'd="M65 190 Q100 200 135 190 Q140 220 100 220 Q60 220 65 190 Z"'],
+      ['path','上肢背面','d="M130 85 L165 145 L150 155 L135 105 Z"'],
+      ['path','上肢背面','d="M70 85 L35 145 L50 155 L65 105 Z"'],
+      ['path','下肢背面','d="M100 220 L115 380 L145 380 L140 200 Z"'],
+      ['path','下肢背面','d="M100 220 L85 380 L55 380 L60 200 Z"'],
+    ];
+    const labels = isFront ? [
+      [100,48,'頭部'],[100,112,'胸部'],[100,165,'腹部'],[38,125,'上肢'],[162,125,'上肢'],[72,290,'下肢'],[128,290,'下肢']
+    ] : [
+      [100,48,'後頭部'],[100,138,'背部'],[100,207,'殿部'],[38,125,'上肢'],[162,125,'上肢'],[72,290,'下肢'],[128,290,'下肢']
+    ];
+    // バッジ位置（所見数）
+    const badges = isFront ? [
+      [100,20,'頭部'],[100,88,'胸部'],[100,145,'腹部'],[162,92,'上肢'],[38,92,'上肢'],[130,200,'下肢'],[70,200,'下肢']
+    ] : [
+      [100,20,'後頭部'],[100,88,'背部'],[100,175,'殿部'],[162,92,'上肢背面'],[38,92,'上肢背面'],[130,210,'下肢背面'],[70,210,'下肢背面']
+    ];
+    return `<svg viewBox="0 0 200 400" style="width:100%;height:auto;max-height:340px;display:block">
+      ${parts.map(([tag,name,attrs])=>{
+        const c=cnt(name,side);
+        return `<${tag} ${attrs}
+          class="bp" onclick="selectPart('${name}','${side}')"
+          style="fill:${c>0?'rgba(224,53,53,.18)':'#f1f0e8'};stroke:${c>0?'var(--red)':'#ccc'};stroke-width:${c>0?'2':'1'};cursor:pointer;transition:fill .15s"/>`;
+      }).join('')}
+      ${labels.map(([x,y,t])=>`<text x="${x}" y="${y}" text-anchor="middle" style="font-size:9px;font-weight:900;fill:#888;text-transform:uppercase;pointer-events:none;user-select:none">${t}</text>`).join('')}
+      ${badges.map(([x,y,name])=>{ const c=cnt(name,side); return c>0?`<circle cx="${x}" cy="${y}" r="9" fill="var(--red)"/><text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" style="font-size:9px;font-weight:900;fill:#fff;pointer-events:none">${c}</text>`:''; }).join('')}
+    </svg>`;
+  };
+
+  // ボタンリスト
+  const mkBtn = (name, side, icon, color, border) => {
+    const c = cnt(name, side);
+    return `<button onclick="selectPart('${name}','${side}')"
+      style="position:relative;display:flex;align-items:center;gap:10px;padding:12px 14px;background:${c>0?color:'var(--s1)'};border:2px solid ${c>0?border:'var(--b0)'};border-radius:12px;cursor:pointer;width:100%;text-align:left;transition:all .15s;-webkit-tap-highlight-color:transparent"
+      ontouchstart="this.style.opacity='.7'" ontouchend="this.style.opacity='1'">
+      <span style="font-size:20px;flex-shrink:0">${icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:900;color:var(--t0)">${name}</div>
+        <div style="font-size:10px;color:${c>0?border:'var(--t3)'};margin-top:1px">${c>0?c+'件の所見':'所見なし'}</div>
       </div>
-      ${badge}
-      <span style="margin-left:auto;color:#aaa;font-size:18px;flex-shrink:0">›</span>
+      ${c>0?`<span style="background:${border};color:#fff;border-radius:999px;font-size:10px;font-weight:900;padding:2px 7px">${c}</span>`:''}
+      <span style="color:var(--t3);font-size:16px">›</span>
     </button>`;
   };
 
   return `
-  <div style="max-width:720px;margin:0 auto">
-    <!-- 人体SVG + ボタン の2カラム -->
+  <div style="max-width:800px;margin:0 auto">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
 
       <!-- 前面 -->
-      <div style="background:var(--s0);border-radius:20px;padding:20px;border:1.5px solid var(--b0)">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-          <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:900;padding:3px 10px;border-radius:999px;letter-spacing:.05em">前面</span>
-          <svg viewBox="0 0 60 120" style="width:36px;height:auto;opacity:.35">
-            <ellipse cx="30" cy="12" rx="8" ry="9" fill="#64748b"/>
-            <rect x="2" y="2" width="2" height="6" rx="1" fill="#64748b" transform="translate(20,18)"/>
-            <path d="M20 22 Q30 20 40 22 L42 48 Q30 50 18 48 Z" fill="#64748b"/>
-            <path d="M18 48 Q30 50 42 48 L40 68 Q30 72 20 68 Z" fill="#64748b" opacity=".7"/>
-            <path d="M40 22 L52 44 L47 47 L38 28 Z" fill="#64748b" opacity=".6"/>
-            <path d="M20 22 L8 44 L13 47 L22 28 Z" fill="#64748b" opacity=".6"/>
-            <path d="M30 68 L33 118 L41 118 L38 66 Z" fill="#64748b" opacity=".6"/>
-            <path d="M30 68 L27 118 L19 118 L22 66 Z" fill="#64748b" opacity=".6"/>
-          </svg>
+      <div style="background:var(--s0);border-radius:20px;border:1.5px solid var(--b0);overflow:hidden">
+        <div style="padding:14px 16px 0;display:flex;align-items:center;gap:8px">
+          <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:900;padding:3px 10px;border-radius:999px">前面</span>
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          ${frontParts.map(mkBtn).join('')}
+        <!-- SVG人形 -->
+        <div style="padding:8px 24px 0">
+          ${svgFigure('front')}
+        </div>
+        <!-- ボタンリスト -->
+        <div style="padding:12px;display:flex;flex-direction:column;gap:6px">
+          ${mkBtn('頭部',   'front','🧠','#e0e7ff','#6366f1')}
+          ${mkBtn('胸部',   'front','❤️','#fce7f3','#ec4899')}
+          ${mkBtn('腹部',   'front','🫁','#fef3c7','#f59e0b')}
+          ${mkBtn('上肢',   'front','💪','#d1fae5','#10b981')}
+          ${mkBtn('下肢',   'front','🦵','#dbeafe','#3b82f6')}
         </div>
       </div>
 
       <!-- 背面 -->
-      <div style="background:var(--s0);border-radius:20px;padding:20px;border:1.5px solid var(--b0)">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-          <span style="background:#f3e8ff;color:#7c3aed;font-size:10px;font-weight:900;padding:3px 10px;border-radius:999px;letter-spacing:.05em">背面</span>
-          <svg viewBox="0 0 60 120" style="width:36px;height:auto;opacity:.35;transform:scaleX(-1)">
-            <ellipse cx="30" cy="12" rx="8" ry="9" fill="#64748b"/>
-            <path d="M20 22 Q30 20 40 22 L42 68 Q30 72 18 68 Z" fill="#64748b"/>
-            <path d="M18 68 Q30 72 42 68 Q44 78 30 80 Q16 78 18 68 Z" fill="#64748b" opacity=".7"/>
-            <path d="M40 22 L52 44 L47 47 L38 28 Z" fill="#64748b" opacity=".6"/>
-            <path d="M20 22 L8 44 L13 47 L22 28 Z" fill="#64748b" opacity=".6"/>
-            <path d="M30 80 L33 118 L41 118 L40 78 Z" fill="#64748b" opacity=".6"/>
-            <path d="M30 80 L27 118 L19 118 L20 78 Z" fill="#64748b" opacity=".6"/>
-          </svg>
+      <div style="background:var(--s0);border-radius:20px;border:1.5px solid var(--b0);overflow:hidden">
+        <div style="padding:14px 16px 0;display:flex;align-items:center;gap:8px">
+          <span style="background:#f3e8ff;color:#7c3aed;font-size:10px;font-weight:900;padding:3px 10px;border-radius:999px">背面</span>
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          ${backParts.map(mkBtn).join('')}
+        <div style="padding:8px 24px 0">
+          ${svgFigure('back')}
+        </div>
+        <div style="padding:12px;display:flex;flex-direction:column;gap:6px">
+          ${mkBtn('後頭部', 'back','🔵','#e0e7ff','#6366f1')}
+          ${mkBtn('背部',   'back','🟣','#f3e8ff','#a855f7')}
+          ${mkBtn('殿部',   'back','🟤','#fef3c7','#d97706')}
+          ${mkBtn('上肢背面','back','💪','#d1fae5','#10b981')}
+          ${mkBtn('下肢背面','back','🦵','#dbeafe','#3b82f6')}
         </div>
       </div>
 
     </div>
-    <div style="text-align:center;margin-top:16px;color:var(--t3);font-size:12px;font-weight:700">
-      部位をタップして所見を表示・操作
-    </div>
+    <p style="text-align:center;margin-top:14px;color:var(--t3);font-size:11px;font-weight:700">
+      人形または部位ボタンをタップして選択
+    </p>
   </div>`;
 }
 
