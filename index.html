@@ -464,8 +464,9 @@ function doLogin(){
 
 function setRole(r){
   role=r; hide('G-role');
-  if(r==='participant'){ show('G-sync'); }
-  else{ show('G-cases'); loadCases(); }
+  // 実施者もG-syncを経由せず症例一覧へ（AudioContextは症例タップ時に初期化）
+  audioOn=true;
+  show('G-cases'); loadCases();
 }
 
 function goBack(){
@@ -588,11 +589,22 @@ function pf(c){ // parse findings
 
 function selectCase(cid){
   caseId=cid; curCase=cases.find(c=>c.id===cid);
+  // ユーザー操作のタイミングでAudioContextを初期化
+  if(!audioCtx){
+    try{
+      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      const buf=audioCtx.createBuffer(1,1,22050);
+      const src=audioCtx.createBufferSource();
+      src.buffer=buf; src.connect(audioCtx.destination); src.start(0);
+    }catch(e){}
+  }
+  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
   hide('G-cases');
   if(role==='instructor'){
     show('G-inst'); $('inst-title').textContent=curCase?.title||'';
     setTab('Vital'); subSession();
   }else{
+    audioOn=true;
     show('G-part'); subSession(); startECG();
   }
 }
@@ -641,7 +653,14 @@ function applySession(data){
     if(data.vitals!=null) SS.vitals=typeof data.vitals==='string'?JSON.parse(data.vitals):data.vitals;
     if(data.show_vitals!=null) SS.showVitals=data.show_vitals;
   }catch(e){ console.error(e); }
+  // メトロノームのON/OFFが変化したら即反映
+  const metroWasOn = prev.metronome?.on;
+  const metroNowOn = SS.metronome?.on;
+  if(metroNowOn && !metroWasOn){ startMetro(); }
+  else if(!metroNowOn && metroWasOn){ stopMetro(); }
   if(role==='participant') applyPartState(SS,prev);
+  // 想定者側もメイン再描画してON/OFFボタンを更新
+  if(role==='instructor' && activeTab==='Init') renderMain();
 }
 
 async function pushSession(updates){
@@ -868,21 +887,28 @@ function ecgDefl(t, pel, r){
    ==================================================== */
 function startMetro(){
   stopMetro();
-  const tick=()=>{
-    if(!SS.metronome.on||!audioOn) return;
-    try{
-      if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-      if(audioCtx.state==='suspended') audioCtx.resume();
-      const a=audioCtx, o=a.createOscillator(), g=a.createGain();
-      o.type='sine'; o.frequency.setValueAtTime(1000,a.currentTime);
-      g.gain.setValueAtTime(.1,a.currentTime); g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.1);
-      o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+.1);
-    }catch(e){}
-    let iv=(60/SS.metronome.bpm)*1000;
-    if(SS.metronome.isIrregular) iv*=(0.6+Math.random()*0.8);
-    metroTimer=setTimeout(tick,iv);
-  };
-  if(SS.metronome.on) tick();
+  // AudioContext が suspended なら resume してから開始
+  if(audioCtx && audioCtx.state==='suspended'){
+    audioCtx.resume().then(()=>_metroTick());
+  } else {
+    _metroTick();
+  }
+}
+function _metroTick(){
+  if(!SS.metronome.on||!audioOn){ metroTimer=null; return; }
+  try{
+    if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended'){ audioCtx.resume(); }
+    const a=audioCtx, o=a.createOscillator(), g=a.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(880,a.currentTime);   // 880Hz（より聞こえやすい）
+    g.gain.setValueAtTime(0.15,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.12);
+    o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+0.12);
+  }catch(e){ console.warn('metro tick error:', e); }
+  let iv=(60/SS.metronome.bpm)*1000;
+  if(SS.metronome.isIrregular) iv*=(0.6+Math.random()*0.8);
+  metroTimer=setTimeout(_metroTick, iv);
 }
 function stopMetro(){ if(metroTimer){ clearTimeout(metroTimer); metroTimer=null; } }
 
@@ -1040,34 +1066,33 @@ function bodyMapHTML(){
   const svgFigure = (side) => {
     const isFront = side==='front';
     const parts = isFront ? [
-      ['ellipse','頭部', 'cx="100" cy="45" rx="25" ry="30"'],
-      ['path','胸部',    'd="M70 85 Q100 80 130 85 L140 140 Q100 145 60 140 Z"'],
-      ['path','腹部',    'd="M60 140 Q100 145 140 140 L135 190 Q100 200 65 190 Z"'],
-      ['path','上肢',    'd="M130 85 L165 145 L150 155 L135 105 Z"'],
-      ['path','上肢',    'd="M70 85 L35 145 L50 155 L65 105 Z"'],
-      ['path','下肢',    'd="M100 195 L115 380 L145 380 L135 190 Z"'],
-      ['path','下肢',    'd="M100 195 L85 380 L55 380 L65 190 Z"'],
+      ['ellipse','頭部', 'cx="100" cy="40" rx="22" ry="26"'],
+      ['path','胸部',    'd="M72 68 Q100 64 128 68 L136 118 Q100 122 64 118 Z"'],
+      ['path','腹部',    'd="M64 118 Q100 122 136 118 L132 162 Q100 170 68 162 Z"'],
+      ['path','上肢',    'd="M128 68 L158 120 L146 128 L130 84 Z"'],
+      ['path','上肢',    'd="M72 68 L42 120 L54 128 L70 84 Z"'],
+      ['path','下肢',    'd="M100 166 L112 280 L136 280 L128 162 Z"'],
+      ['path','下肢',    'd="M100 166 L88 280 L64 280 L72 162 Z"'],
     ] : [
-      ['ellipse','後頭部','cx="100" cy="45" rx="25" ry="30"'],
-      ['path','背部',    'd="M70 85 Q100 80 130 85 L135 190 Q100 200 65 190 Z"'],
-      ['path','殿部',    'd="M65 190 Q100 200 135 190 Q140 220 100 220 Q60 220 65 190 Z"'],
-      ['path','上肢背面','d="M130 85 L165 145 L150 155 L135 105 Z"'],
-      ['path','上肢背面','d="M70 85 L35 145 L50 155 L65 105 Z"'],
-      ['path','下肢背面','d="M100 220 L115 380 L145 380 L140 200 Z"'],
-      ['path','下肢背面','d="M100 220 L85 380 L55 380 L60 200 Z"'],
+      ['ellipse','後頭部','cx="100" cy="40" rx="22" ry="26"'],
+      ['path','背部',    'd="M72 68 Q100 64 128 68 L132 162 Q100 170 68 162 Z"'],
+      ['path','殿部',    'd="M68 162 Q100 170 132 162 Q136 186 100 188 Q64 186 68 162 Z"'],
+      ['path','上肢背面','d="M128 68 L158 120 L146 128 L130 84 Z"'],
+      ['path','上肢背面','d="M72 68 L42 120 L54 128 L70 84 Z"'],
+      ['path','下肢背面','d="M100 188 L112 280 L136 280 L132 182 Z"'],
+      ['path','下肢背面','d="M100 188 L88 280 L64 280 L68 182 Z"'],
     ];
     const labels = isFront ? [
-      [100,48,'頭部'],[100,112,'胸部'],[100,165,'腹部'],[38,125,'上肢'],[162,125,'上肢'],[72,290,'下肢'],[128,290,'下肢']
+      [100,43,'頭部'],[100,95,'胸部'],[100,143,'腹部'],[36,102,'上肢'],[164,102,'上肢'],[76,232,'下肢'],[124,232,'下肢']
     ] : [
-      [100,48,'後頭部'],[100,138,'背部'],[100,207,'殿部'],[38,125,'上肢'],[162,125,'上肢'],[72,290,'下肢'],[128,290,'下肢']
+      [100,43,'後頭部'],[100,118,'背部'],[100,176,'殿部'],[36,102,'上肢'],[164,102,'上肢'],[76,238,'下肢'],[124,238,'下肢']
     ];
-    // バッジ位置（所見数）
     const badges = isFront ? [
-      [100,20,'頭部'],[100,88,'胸部'],[100,145,'腹部'],[162,92,'上肢'],[38,92,'上肢'],[130,200,'下肢'],[70,200,'下肢']
+      [100,16,'頭部'],[100,72,'胸部'],[100,126,'腹部'],[158,88,'上肢'],[42,88,'上肢'],[124,178,'下肢'],[76,178,'下肢']
     ] : [
-      [100,20,'後頭部'],[100,88,'背部'],[100,175,'殿部'],[162,92,'上肢背面'],[38,92,'上肢背面'],[130,210,'下肢背面'],[70,210,'下肢背面']
+      [100,16,'後頭部'],[100,78,'背部'],[100,160,'殿部'],[158,88,'上肢背面'],[42,88,'上肢背面'],[124,184,'下肢背面'],[76,184,'下肢背面']
     ];
-    return `<svg viewBox="0 0 200 400" style="width:100%;height:auto;max-height:340px;display:block">
+    return `<svg viewBox="0 0 200 295" style="width:100%;height:auto;max-height:260px;display:block">
       ${parts.map(([tag,name,attrs])=>{
         const c=cnt(name,side);
         return `<${tag} ${attrs}
