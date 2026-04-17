@@ -308,10 +308,10 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
    ==================================================== */
 const CONFIG = {
   // ===================================================
-  // ★ ここを書き換えてください（この3箇所だけ）
-  supabaseUrl: 'https://xxxx.supabase.co',   // SupabaseのProject URL
-  supabaseKey: 'your-anon-public-key-here',  // Supabase anon public key
-  roomPassword: '1234',                      // 入室パスワード（全員共通）
+  // ★ 入室パスワードだけ変更できます
+  supabaseUrl: 'https://zwzbgzvamefdfgfeiqld.supabase.co',
+  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3emJnenZhbWVmZGZnZmVpcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTE3NzksImV4cCI6MjA5MTk4Nzc3OX0.DeNUBgO78HOTAimyrWDNwPykziVLianMkcrhsG5cx5c',
+  roomPassword: '1234',                      // ← 入室パスワード（自由に変更可）
   // ===================================================
 };
 /* ==================================================== */
@@ -389,17 +389,6 @@ let reSub = null, casesSub = null, pollTimer = null;
    INIT
    ==================================================== */
 window.onload = () => {
-  // CONFIGのURLとキーが未設定の場合はアラート
-  if(!CONFIG.supabaseUrl || CONFIG.supabaseUrl.includes('xxxx') ||
-     !CONFIG.supabaseKey || CONFIG.supabaseKey.includes('your-anon')){
-    document.getElementById('G-loading').innerHTML =
-      '<div style="text-align:center;color:#fca5a5;padding:32px">' +
-      '<div style="font-size:40px;margin-bottom:16px">⚠️</div>' +
-      '<h2 style="font-size:20px;font-weight:900;margin-bottom:12px">設定が必要です</h2>' +
-      '<p style="font-size:13px;opacity:.7;line-height:1.8">index.htmlを開き、<br>CONFIGブロックに<br>SupabaseのURLとAPIキーを<br>入力してください。</p>' +
-      '</div>';
-    return;
-  }
   API.init(CONFIG.supabaseUrl, CONFIG.supabaseKey);
   SB = true;
   show('G-config'); hide('G-loading');
