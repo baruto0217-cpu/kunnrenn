@@ -414,6 +414,14 @@ const API = {
     const data = await r.json().catch(()=>({}));
     if(!r.ok) return {data:null, error:{message: data.message||data.error||JSON.stringify(data)}};
     return {data, error:null};
+  },
+  async delete(table, filter){
+    const r = await fetch(this.url+'/rest/v1/'+table+'?'+filter, this.opts({method:'DELETE'}));
+    if(!r.ok){
+      const data = await r.json().catch(()=>({}));
+      return {error:{message: data.message||data.error||JSON.stringify(data)}};
+    }
+    return {error:null};
   }
 };
 let caseId = null, curCase = null;
@@ -430,7 +438,8 @@ let SS = { // session state
   speechUrl:null, speechId:null,
   metronome:{on:false,bpm:100,isIrregular:false},
   vitals:{bpSys:'--',bpDia:'--',hr:'72',rr:'--',spo2:'--',temp:'--',rhythmType:'SR',sweepSpeed:160},
-  showVitals:false
+  showVitals:false,
+  abcde:{ A:'', B:'', C:'', D:'', E:'', activeKey:null }  // ABCDE口頭付与
 };
 let LV = {bpSys:'',bpDia:'',hr:'72',rr:'',spo2:'',temp:'',rhythmType:'SR',sweepSpeed:160};
 let audioOn = false, metroTimer = null, audioCtx = null;
@@ -564,11 +573,18 @@ function renderCases(){
     const d=document.createElement('div');
     d.className='case-card';
     d.innerHTML=`
-      <div style="flex:1">
-        <div style="font-size:17px;font-weight:900">${esc(c.title)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:17px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.title)}</div>
       </div>
-      <div class="flex ac g2">
-        ${role==='instructor'?`<button onclick="copyCase('${c.id}',event)" style="background:none;color:var(--t3);font-size:17px;padding:5px;border-radius:8px" title="コピー">⎘</button>`:''}
+      <div class="flex ac g2" style="flex-shrink:0;margin-left:8px">
+        ${role==='instructor'?`
+          <button onclick="copyCase('${c.id}',event)"
+            style="background:none;color:var(--t3);font-size:17px;padding:7px;border-radius:10px;min-width:36px;min-height:36px"
+            title="コピー">⎘</button>
+          <button onclick="deleteCase('${c.id}',event)"
+            style="background:none;color:var(--t3);font-size:17px;padding:7px;border-radius:10px;min-width:36px;min-height:36px"
+            title="削除">🗑️</button>
+        `:''}
         <span style="color:var(--t3);font-size:20px">›</span>
       </div>`;
     d.addEventListener('click',()=>selectCase(c.id));
@@ -608,6 +624,20 @@ async function copyCase(cid,e){
   }else{
     const {error} = await API.insert('sim_cases',{title:orig.title+' (コピー)',findings:fs,created_at:new Date().toISOString()});
     if(error){ alert('コピーエラー: '+(error.message||JSON.stringify(error))); }
+  }
+}
+
+async function deleteCase(cid,e){
+  e.stopPropagation();
+  const orig=cases.find(c=>c.id===cid); if(!orig) return;
+  if(!confirm(`「${orig.title}」を削除しますか？\nこの操作は取り消せません。`)) return;
+  if(isDemo){
+    demoCases = demoCases.filter(c=>c.id!==cid);
+    cases = [...demoCases]; renderCases();
+  }else{
+    const {error} = await API.delete('sim_cases','id=eq.'+encodeURIComponent(cid));
+    if(error){ alert('削除エラー: '+(error.message||JSON.stringify(error))); return; }
+    await loadCases();
   }
 }
 
@@ -707,6 +737,7 @@ function applySession(data){
     if(data.metronome!=null) SS.metronome=typeof data.metronome==='string'?JSON.parse(data.metronome):data.metronome;
     if(data.vitals!=null) SS.vitals=typeof data.vitals==='string'?JSON.parse(data.vitals):data.vitals;
     if(data.show_vitals!=null) SS.showVitals=data.show_vitals;
+    if(data.abcde!=null) SS.abcde=typeof data.abcde==='string'?JSON.parse(data.abcde):data.abcde;
   }catch(e){ console.error(e); }
   // メトロノームのON/OFFが変化したら即反映
   const metroWasOn = prev.metronome?.on;
@@ -734,6 +765,7 @@ async function pushSession(updates){
     metronome:SS.metronome,
     vitals:SS.vitals,
     show_vitals:SS.showVitals,
+    abcde:SS.abcde,
     updated_at:new Date().toISOString()
   };
   const {error} = await API.upsert('sim_sessions', pl, 'case_id');
@@ -849,9 +881,11 @@ function renderFO(s){
   const all=[...pf(curCase).Pre||[],...pf(curCase).Init||[],...pf(curCase).Full||[]];
   const active=all.filter(f=>(s.activeFindingIds||[]).includes(f.id));
   const hasSpeech=!!s.isSpeakingText;
+  const ab = s.abcde||{};
+  const hasAbcde = ab.activeKey && ab[ab.activeKey];
   const fo=$('fo'), inner=$('fo-inner');
   if(!fo||!inner) return;
-  if(!active.length&&!hasSpeech){ fo.style.display='none'; return; }
+  if(!active.length&&!hasSpeech&&!hasAbcde){ fo.style.display='none'; return; }
   fo.style.display='flex'; inner.innerHTML='';
   active.forEach(f=>{
     const d=document.createElement('div');
@@ -867,6 +901,18 @@ function renderFO(s){
     d.className='fo-speech';
     d.innerHTML=`<div style="font-size:38px;margin-bottom:14px">🎙️</div>
       <div style="font-size:clamp(22px,4vw,42px);font-weight:900;line-height:1.3;color:#fff">${esc(s.isSpeakingText)}</div>`;
+    inner.appendChild(d);
+  }
+  // ABCDE 口頭付与の表示
+  if(hasAbcde){
+    const key = ab.activeKey;
+    const labels = {A:'気道 (Airway)',B:'呼吸 (Breathing)',C:'循環 (Circulation)',D:'意識 (Disability)',E:'体温・外表 (Exposure)'};
+    const d=document.createElement('div');
+    d.style.cssText='background:rgba(37,99,235,.88);border:2px solid rgba(255,255,255,.2);border-radius:26px;padding:28px 32px;text-align:center;animation:scIn .3s ease-out';
+    d.innerHTML=`
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.2);font-size:20px;font-weight:900;color:#fff;margin-bottom:12px">${key}</div>
+      <div style="font-size:12px;font-weight:800;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">${labels[key]||''}</div>
+      <div style="font-size:clamp(20px,3.5vw,34px);font-weight:900;line-height:1.4;color:#fff">${esc(ab[key])}</div>`;
     inner.appendChild(d);
   }
 }
@@ -1121,39 +1167,134 @@ function vitalHTML(){
     {id:'ST_ELEV', l:'ST上昇',         hr:88 },
   ];
   const spd=[{v:80,l:'x0.5 広'},{v:160,l:'x1.0 標準'},{v:320,l:'x2.0 狭'}];
-  return `<div style="max-width:500px;margin:0 auto">
-    <div class="card" style="margin-bottom:0">
-      <h2 style="font-size:19px;font-weight:900;margin-bottom:22px">モニター設定</h2>
-      <div style="margin-bottom:18px">
-        <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">掃引速度</div>
-        <div class="flex g2">${spd.map(s=>`<button class="spd-btn${LV.sweepSpeed==s.v?' on':''}" onclick="setLV('sweepSpeed',${s.v})">${s.l}</button>`).join('')}</div>
+  const presets = getPresets();
+  const presetsHTML = presets.length===0
+    ? `<p style="color:var(--t3);font-size:12px;text-align:center;padding:12px">保存済みプリセットなし</p>`
+    : presets.map((p,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;background:var(--s1);border-radius:12px;padding:10px 12px;border:1.5px solid var(--b0)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:900;color:var(--t0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:1px">HR ${p.vitals.hr||'--'} ／ ${p.vitals.rhythmType||'SR'} ／ SpO₂ ${p.vitals.spo2||'--'}%</div>
+        </div>
+        <button onclick="loadPreset(${i})" style="padding:7px 14px;border-radius:9px;font-size:12px;font-weight:900;background:var(--blue);color:#fff;flex-shrink:0">呼出</button>
+        <button onclick="deletePreset(${i})" style="padding:7px 10px;border-radius:9px;font-size:12px;font-weight:900;background:var(--s3);color:var(--t2);flex-shrink:0">✕</button>
+      </div>`).join('');
+
+  return `<div style="max-width:780px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;align-items:start">
+
+    <!-- 左列: 数値入力 + 同期ボタン -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- バイタル数値入力 -->
+      <div class="card" style="padding:20px">
+        <h3 style="font-size:14px;font-weight:900;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">バイタルサイン</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+          ${[
+            {k:'hr',    l:'HR (bpm)',   },
+            {k:'bpSys', l:'収縮期血圧' },
+            {k:'bpDia', l:'拡張期血圧' },
+            {k:'spo2',  l:'SpO₂ (%)'  },
+            {k:'rr',    l:'呼吸数 (/分)'},
+            {k:'temp',  l:'体温 (°C)'  },
+          ].map(({k,l})=>`
+            <div>
+              <div style="font-size:10px;font-weight:900;color:var(--t3);margin-bottom:4px">${l}</div>
+              <input class="ifield wf" value="${esc(LV[k]||'')}" oninput="LV['${k}']=this.value" placeholder="--" style="font-size:18px;font-weight:900;padding:10px 12px">
+            </div>`).join('')}
+        </div>
+
+        <!-- 同期ボタン群 -->
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button onclick="pushVitals()" class="btn btn-red" style="flex:1;padding:14px;font-size:14px;border-radius:13px;transition:background .3s">
+            📤 同期
+          </button>
+          <button onclick="hideVitals()" style="padding:14px 16px;border-radius:13px;font-size:12px;font-weight:900;border:2px solid var(--b1);background:${SS.showVitals?'var(--s2)':'var(--t0)'};color:${SS.showVitals?'var(--t1)':'#fff'};transition:all .2s;white-space:nowrap;flex-shrink:0">
+            ${SS.showVitals?'🙈 非表示':'👁 再表示'}
+          </button>
+        </div>
+        <div id="sync-status" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;color:#16a34a;text-align:center">
+          ✅ 同期しました
+        </div>
       </div>
-      <div style="margin-bottom:18px">
-        <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">波形タイプ</div>
-        <div class="rhy-grid">${rhy.map(r=>`<button class="rhy-btn${LV.rhythmType===r.id?' on':''}" onclick="setLV('rhythmType','${r.id}')" style="line-height:1.4">${r.l}<span style="display:block;font-size:9px;opacity:.6;font-weight:600">${r.hr} bpm</span></button>`).join('')}</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px">
-        ${['hr','bpSys','bpDia','spo2','rr','temp'].map(v=>`
-          <div>
-            <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;margin-bottom:5px">${v.toUpperCase()}</div>
-            <input class="ifield wf" value="${esc(LV[v]||'')}" onchange="LV['${v}']=this.value" placeholder="--">
-          </div>`).join('')}
-      </div>
-      <div style="display:flex;gap:10px">
-        <button onclick="pushVitals()" class="btn btn-red" style="flex:1;padding:17px;font-size:15px;border-radius:15px;transition:background .3s">
-          📤 更新・同期
-        </button>
-        <button onclick="hideVitals()" id="hide-vitals-btn"
-          style="padding:17px 18px;border-radius:15px;font-size:13px;font-weight:900;border:2px solid var(--b1);background:${SS.showVitals?'var(--s2)':'var(--t0)'};color:${SS.showVitals?'var(--t1)':'#fff'};transition:all .2s;white-space:nowrap">
-          ${SS.showVitals?'🙈 非表示にする':'👁 再表示する'}
-        </button>
-      </div>
-      <div id="sync-status" style="display:none;margin-top:12px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 16px;font-size:13px;font-weight:800;color:#16a34a;text-align:center">
-        ✅ 実施者端末に同期しました
+
+      <!-- プリセット保存・呼出 -->
+      <div class="card" style="padding:20px">
+        <h3 style="font-size:14px;font-weight:900;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">📋 プリセット</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="preset-name" class="ifield" style="flex:1;padding:10px 12px;font-size:13px" placeholder="プリセット名（例: 心停止前）">
+          <button onclick="savePreset()" style="padding:10px 16px;border-radius:11px;font-size:13px;font-weight:900;background:var(--blue);color:#fff;flex-shrink:0">保存</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px" id="preset-list">
+          ${presetsHTML}
+        </div>
       </div>
     </div>
+
+    <!-- 右列: 波形設定 -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card" style="padding:20px">
+        <h3 style="font-size:14px;font-weight:900;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">波形タイプ</h3>
+        <div class="rhy-grid" style="margin-bottom:14px">
+          ${rhy.map(r=>`<button class="rhy-btn${LV.rhythmType===r.id?' on':''}" onclick="setLV('rhythmType','${r.id}')" style="line-height:1.4">${r.l}<span style="display:block;font-size:9px;opacity:.6;font-weight:600">${r.hr} bpm</span></button>`).join('')}
+        </div>
+        <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">掃引速度</div>
+        <div class="flex g2">
+          ${spd.map(s=>`<button class="spd-btn${LV.sweepSpeed==s.v?' on':''}" onclick="setLV('sweepSpeed',${s.v})">${s.l}</button>`).join('')}
+        </div>
+      </div>
+    </div>
+
   </div>`;
 }
+/* ====================================================
+   プリセット管理（localStorage）
+   ==================================================== */
+const PRESET_KEY = 'kyukyu_presets_' + (currentRoom||'r1');
+
+function getPresets(){
+  try{ return JSON.parse(localStorage.getItem(PRESET_KEY)||'[]'); }catch(e){ return []; }
+}
+function savePresets(list){ localStorage.setItem(PRESET_KEY, JSON.stringify(list)); }
+
+function savePreset(){
+  const nameEl = $('preset-name');
+  const name = nameEl ? nameEl.value.trim() : '';
+  if(!name){ alert('プリセット名を入力してください'); return; }
+  const list = getPresets();
+  // 同名があれば上書き確認
+  const existing = list.findIndex(p=>p.name===name);
+  if(existing>=0){
+    if(!confirm(`「${name}」は既に存在します。上書きしますか？`)) return;
+    list[existing] = { name, vitals:{...LV}, savedAt: Date.now() };
+  } else {
+    list.unshift({ name, vitals:{...LV}, savedAt: Date.now() });
+  }
+  savePresets(list);
+  if(nameEl) nameEl.value='';
+  renderMain();
+}
+
+function loadPreset(idx){
+  const list = getPresets();
+  if(!list[idx]) return;
+  LV = {...LV, ...list[idx].vitals};
+  renderMain();
+  // 自動同期するか確認
+  if(confirm(`「${list[idx].name}」を読み込みました。
+実施者端末に同期しますか？`)){
+    pushVitals();
+  }
+}
+
+function deletePreset(idx){
+  const list = getPresets();
+  if(!list[idx]) return;
+  if(!confirm(`「${list[idx].name}」を削除しますか？`)) return;
+  list.splice(idx,1);
+  savePresets(list);
+  renderMain();
+}
+
 // リズム選択時にHRを自動セット
 const RHYTHM_DEFAULT_HR = {
   'SR':      72,
@@ -1201,7 +1342,7 @@ async function pushVitals(){
     btn.innerHTML='✅ 同期完了';
     btn.style.background='var(--green)';
     setTimeout(()=>{
-      btn.innerHTML='📤 モニターを更新・同期';
+      btn.innerHTML='📤 同期';
       btn.style.background='';
       btn.disabled=false;
     }, 2000);
@@ -1225,28 +1366,105 @@ async function pushVitals(){
    INIT TAB (metronome)
    ==================================================== */
 function initHTML(){
-  const m=SS.metronome;
-  return `<div style="max-width:500px;margin:0 auto 24px">
-    <div class="card">
-      <div class="flex ac jsb" style="margin-bottom:18px">
-        <div class="flex ac g3">
-          <div style="padding:9px;border-radius:11px;background:${m.on?'var(--red)':'var(--s2)'};font-size:20px">💓</div>
-          <h2 style="font-size:17px;font-weight:900">メトロノーム</h2>
+  const m = SS.metronome;
+  const ab = SS.abcde || {};
+  const items = [
+    { key:'A', label:'A — 気道 (Airway)',    ph:'例: 開通・呼名反応あり / 喘鳴あり' },
+    { key:'B', label:'B — 呼吸 (Breathing)',  ph:'例: 胸郭挙上あり・左右差なし / SpO₂ 92%' },
+    { key:'C', label:'C — 循環 (Circulation)',ph:'例: 橈骨動脈触知可・冷汗あり / CRT 3秒' },
+    { key:'D', label:'D — 意識 (Disability)', ph:'例: GCS E2V3M4 / 瞳孔 3mm 対光反射(+)' },
+    { key:'E', label:'E — 体温・外表 (Exposure)', ph:'例: 体温 38.5°C / 右前腕に擦過傷' },
+  ];
+
+  const activeKey = ab.activeKey || null;
+
+  return `<div style="max-width:780px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start">
+
+    <!-- 左: ABCDE 口頭付与 -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="padding:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h2 style="font-size:16px;font-weight:900">🗣️ 口頭付与内容</h2>
+          <div style="display:flex;gap:6px">
+            <button onclick="clearAbcde()" style="padding:6px 12px;border-radius:9px;font-size:11px;font-weight:900;background:var(--s2);color:var(--t2)">全消去</button>
+          </div>
         </div>
-        <button onclick="toggleMetro()" style="padding:9px 22px;border-radius:999px;font-size:12px;font-weight:900;background:${m.on?'var(--red)':'var(--s2)'};color:${m.on?'#fff':'var(--t1)'}">${m.on?'ON（停止）':'OFF（開始）'}</button>
-      </div>
-      <div class="flex g3">
-        <div style="flex:1;background:var(--s2);border-radius:13px;padding:14px;border:2px solid var(--b0)">
-          <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;margin-bottom:3px">BPM</div>
-          <input type="number" value="${m.bpm}" style="width:100%;font-size:26px;font-weight:900;text-align:center;color:var(--t0)" oninput="setMetroBpm(this.value)">
-        </div>
-        <button onclick="toggleIrr()" class="irr${m.isIrregular?' on':''}">
-          <span style="font-size:20px">🔀</span><span style="font-size:11px">不整</span>
-        </button>
+        ${items.map(({key,label,ph})=>{
+          const val = ab[key]||'';
+          const isActive = activeKey===key;
+          return `<div style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;font-size:12px;font-weight:900;background:${val?'var(--blue)':'var(--s2)'};color:${val?'#fff':'var(--t3)'};flex-shrink:0">${key}</span>
+              <span style="font-size:12px;font-weight:800;color:var(--t1)">${label}</span>
+            </div>
+            <div style="display:flex;gap:6px">
+              <textarea
+                oninput="updateAbcde('${key}',this.value)"
+                placeholder="${ph}"
+                style="flex:1;background:var(--s1);border:2px solid ${val?'var(--blue)':'transparent'};border-radius:10px;padding:10px 12px;font-size:13px;color:var(--t0);resize:none;height:64px;font-family:inherit;line-height:1.5;transition:border-color .2s;outline:none">${esc(val)}</textarea>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <button onclick="toggleAbcdeDisplay('${key}')"
+                  title="${isActive?'非表示にする':'実施者に表示'}"
+                  style="padding:8px 10px;border-radius:9px;font-size:16px;background:${isActive?'var(--red)':'var(--s2)'};color:${isActive?'#fff':'var(--t2)'};transition:all .2s;min-height:44px">
+                  ${isActive?'📢':'💬'}
+                </button>
+                <button onclick="updateAbcde('${key}','')"
+                  title="消去"
+                  style="padding:6px 10px;border-radius:9px;font-size:13px;background:var(--s2);color:var(--t3)">✕</button>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
       </div>
     </div>
+
+    <!-- 右: メトロノーム -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="padding:20px">
+        <div class="flex ac jsb" style="margin-bottom:18px">
+          <div class="flex ac g3">
+            <div style="padding:9px;border-radius:11px;background:${m.on?'var(--red)':'var(--s2)'};font-size:20px">💓</div>
+            <h2 style="font-size:17px;font-weight:900">メトロノーム</h2>
+          </div>
+          <button onclick="toggleMetro()" style="padding:9px 22px;border-radius:999px;font-size:12px;font-weight:900;background:${m.on?'var(--red)':'var(--s2)'};color:${m.on?'#fff':'var(--t1)'}">${m.on?'ON（停止）':'OFF（開始）'}</button>
+        </div>
+        <div class="flex g3">
+          <div style="flex:1;background:var(--s2);border-radius:13px;padding:14px;border:2px solid var(--b0)">
+            <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;margin-bottom:3px">BPM</div>
+            <input type="number" value="${m.bpm}" style="width:100%;font-size:26px;font-weight:900;text-align:center;color:var(--t0)" oninput="setMetroBpm(this.value)">
+          </div>
+          <button onclick="toggleIrr()" class="irr${m.isIrregular?' on':''}">
+            <span style="font-size:20px">🔀</span><span style="font-size:11px">不整</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>`;
 }
+/* ====================================================
+   ABCDE 口頭付与
+   ==================================================== */
+function updateAbcde(key, val){
+  SS.abcde = {...(SS.abcde||{}), [key]: val};
+  pushSession({ abcde: SS.abcde });
+}
+
+function toggleAbcdeDisplay(key){
+  const cur = (SS.abcde||{}).activeKey;
+  const newKey = cur===key ? null : key;   // 同じキーなら閉じる
+  SS.abcde = {...(SS.abcde||{}), activeKey: newKey};
+  pushSession({ abcde: SS.abcde });
+  renderMain();
+}
+
+function clearAbcde(){
+  if(!confirm('すべての口頭付与内容を消去しますか？')) return;
+  SS.abcde = { A:'', B:'', C:'', D:'', E:'', activeKey:null };
+  pushSession({ abcde: SS.abcde });
+  renderMain();
+}
+
 function toggleMetro(){
   const on=!SS.metronome.on;
   // AudioContextをユーザー操作のタイミングで確実にunlock
@@ -1565,9 +1783,12 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ ['M-addcase','M-f
      metronome jsonb default '{"on":false,"bpm":100,"isIrregular":false}',
      vitals jsonb default '{}',
      show_vitals boolean default false,
+     abcde jsonb default '{}',
      updated_at timestamptz default now()
    );
    create index if not exists sim_sessions_case_id on sim_sessions(case_id);
+   -- ★既存テーブルにabcdeカラムを追加する場合:
+   -- alter table public.sim_sessions add column if not exists abcde jsonb default '{}';
 
    -- RLS policies
    alter table public.sim_cases enable row level security;
