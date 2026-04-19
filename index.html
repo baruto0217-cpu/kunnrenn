@@ -441,6 +441,35 @@ let reSub = null, casesSub = null, pollTimer = null;
 /* ====================================================
    INIT
    ==================================================== */
+/* ====================================================
+   SCREEN WAKE LOCK（画面スリープ防止）
+   ==================================================== */
+let wakeLock = null;
+
+async function requestWakeLock(){
+  if(!('wakeLock' in navigator)) return; // 非対応ブラウザはスキップ
+  try{
+    if(wakeLock && !wakeLock.released) return; // すでに取得済み
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', ()=>{
+      // 画面がロックされたり別タブになったりすると自動解放される
+      // ページが再び表示されたら再取得
+      wakeLock = null;
+    });
+  }catch(e){ console.warn('WakeLock:', e.message); }
+}
+
+function releaseWakeLock(){
+  if(wakeLock && !wakeLock.released){ wakeLock.release(); wakeLock=null; }
+}
+
+// ページが再びアクティブになったら再取得
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && (role==='instructor'||role==='participant')){
+    requestWakeLock();
+  }
+});
+
 window.onload = () => {
   API.init(CONFIG.supabaseUrl, CONFIG.supabaseKey);
   SB = true;
@@ -623,6 +652,7 @@ function selectCase(cid){
   // =====================================================================
 
   hide('G-cases');
+  requestWakeLock(); // 画面スリープ防止を開始
   if(role==='instructor'){
     show('G-inst'); $('inst-title').textContent=curCase?.title||'';
     setTab('Vital'); subSession();
@@ -634,6 +664,7 @@ function selectCase(cid){
 function exitCase(){
   caseId=null; curCase=null;
   stopECG(); unsub(); stopMetro();
+  releaseWakeLock(); // 画面スリープ防止を解除
   hideAll(); show('G-cases'); loadCases();
 }
 function exitAndLogout(){
@@ -1108,9 +1139,15 @@ function vitalHTML(){
             <input class="ifield wf" value="${esc(LV[v]||'')}" onchange="LV['${v}']=this.value" placeholder="--">
           </div>`).join('')}
       </div>
-      <button onclick="pushVitals()" class="btn btn-red wf" style="padding:17px;font-size:15px;border-radius:15px;transition:background .3s">
-        📤 モニターを更新・同期
-      </button>
+      <div style="display:flex;gap:10px">
+        <button onclick="pushVitals()" class="btn btn-red" style="flex:1;padding:17px;font-size:15px;border-radius:15px;transition:background .3s">
+          📤 更新・同期
+        </button>
+        <button onclick="hideVitals()" id="hide-vitals-btn"
+          style="padding:17px 18px;border-radius:15px;font-size:13px;font-weight:900;border:2px solid var(--b1);background:${SS.showVitals?'var(--s2)':'var(--t0)'};color:${SS.showVitals?'var(--t1)':'#fff'};transition:all .2s;white-space:nowrap">
+          ${SS.showVitals?'🙈 非表示にする':'👁 再表示する'}
+        </button>
+      </div>
       <div id="sync-status" style="display:none;margin-top:12px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 16px;font-size:13px;font-weight:800;color:#16a34a;text-align:center">
         ✅ 実施者端末に同期しました
       </div>
@@ -1137,6 +1174,24 @@ function setLV(k,v){
   }
   renderMain();
 }
+async function hideVitals(){
+  const nowShowing = SS.showVitals;
+  await pushSession({ showVitals: !nowShowing });
+  // ナビバー更新
+  const indicator = $('vital-indicator');
+  if(indicator){
+    if(nowShowing){
+      indicator.textContent = '🙈 バイタル非表示中';
+      indicator.style.color = 'var(--t3)';
+    } else {
+      indicator.textContent = `✅ 同期済 ｜ HR ${LV.hr||'--'} ／ BP ${LV.bpSys||'--'}/${LV.bpDia||'--'} ／ SpO₂ ${LV.spo2||'--'}% ／ ${LV.rhythmType||'SR'}`;
+      indicator.style.color = 'var(--green)';
+    }
+    indicator.style.opacity = '1';
+  }
+  renderMain();
+}
+
 async function pushVitals(){
   const btn = document.querySelector('[onclick="pushVitals()"]');
   if(btn){ btn.disabled=true; btn.innerHTML='⏳ 送信中...'; }
