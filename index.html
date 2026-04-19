@@ -74,6 +74,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 .inst-main{flex:1;overflow-y:auto;padding:28px;background:var(--s2)}
 /* Vitals + rhythm */
 .rhy-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.rhy-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
 .rhy-btn{padding:11px 8px;border-radius:11px;font-size:11px;font-weight:800;background:var(--s2);color:var(--t2);border:2px solid transparent;cursor:pointer;transition:all .15s;text-align:center}
 .rhy-btn.on{background:#fef2f2;border-color:var(--red);color:var(--red)}
 .spd-btn{flex:1;padding:9px 6px;border-radius:10px;font-size:11px;font-weight:800;background:var(--s2);color:var(--t2);border:2px solid transparent;cursor:pointer;transition:all .15s}
@@ -307,7 +308,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
         </div>
       </div>
       <!-- Findings overlay (inside ECG area) -->
-      <div id="fo" style="display:none;position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.45);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px">
+      <div id="fo" style="display:none;position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.45);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:20px">
         <div id="fo-inner" style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:700px"></div>
       </div>
     </div>
@@ -818,7 +819,7 @@ function applyPartState(s,prev){
   const v=s.vitals||{};
   if(s.showVitals){
     // モニター表示中：実際の値を表示
-    $('pv-hr').textContent  = v.hr||'--';
+    $('pv-hr').textContent  = (v.hr&&v.hr!=='')?v.hr:'--';
     $('pv-bp').textContent  = (v.bpSys||'--')+'/'+(v.bpDia||'--');
     $('pv-spo2').textContent= v.spo2||'--';
     $('pv-temp').textContent= (v.temp||'--')+'°C';
@@ -960,8 +961,9 @@ function ecgDraw(ts){
     if(ecgRhythm==='2nd_AVB'){ ecg2ndCount=(ecg2ndCount+1)%3; }
 
     // ===== R波頂点でビープ音（QRS発生タイミング）=====
-    // QRS脱落する拍（2度AVBでカウント0）はスキップ
-    const hasQRS = !(ecgRhythm==='2nd_AVB' && ecg2ndCount===0);
+    // QRS脱落拍・VF・VTはスキップ（不規則/ビープ不適）
+    const hasQRS = !(ecgRhythm==='2nd_AVB' && ecg2ndCount===0)
+                && ecgRhythm!=='VF';
     if(hasQRS && audioOn && SS.showVitals){
       ecgBeep();
     }
@@ -972,8 +974,9 @@ function ecgDraw(ts){
   if(ecgRhythm==='3rd_AVB' && ts-ecgPBS>=pbi){ ecgPBS=ts; }
   const pel=ecgRhythm==='3rd_AVB'?ts-ecgPBS:0;
 
-  // VT位相を時間から累積（リセット対応）
+  // VT/VF 位相を時間から累積
   if(ecgRhythm==='VT') ecgVTPhase+=dt/160;
+  if(ecgRhythm==='VF') ecgVTPhase+=dt/80;  // VFは速い
 
   const dx=(ecgSweep*dt)/1000;
   const dy=ecgDefl(el,pel,ecgRhythm);
@@ -996,6 +999,15 @@ function ecgDefl(t, pel, r){
   if(r==='VT'){
     const vt=(ecgVTPhase%1);
     return Math.sin(vt*Math.PI*2)*70 + Math.sin(vt*Math.PI*4)*18;
+  }
+
+  // VF: 不規則な低振幅ノイズ（全てランダム）
+  if(r==='VF'){
+    const s1 = Math.sin(t * 0.35 + ecgVTPhase*6) * 38;
+    const s2 = Math.sin(t * 0.22 + ecgVTPhase*9) * 22;
+    const s3 = (Math.random()-0.5) * 18;
+    const s4 = Math.sin(t * 0.55 + ecgVTPhase*4) * 14;
+    return s1 + s2 + s3 + s4;
   }
 
   // P波（半正弦波）
@@ -1164,6 +1176,7 @@ function vitalHTML(){
     {id:'2nd_AVB', l:'2度 AVB',        hr:60 },
     {id:'3rd_AVB', l:'3度 AVB',        hr:40 },
     {id:'VT',      l:'心室頻拍 (VT)', hr:180},
+    {id:'VF',      l:'心室細動 (VF)', hr:null},
     {id:'ST_ELEV', l:'ST上昇',         hr:88 },
   ];
   const spd=[{v:80,l:'x0.5 広'},{v:160,l:'x1.0 標準'},{v:320,l:'x2.0 狭'}];
@@ -1235,7 +1248,7 @@ function vitalHTML(){
       <div class="card" style="padding:20px">
         <h3 style="font-size:14px;font-weight:900;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">波形タイプ</h3>
         <div class="rhy-grid" style="margin-bottom:14px">
-          ${rhy.map(r=>`<button class="rhy-btn${LV.rhythmType===r.id?' on':''}" onclick="setLV('rhythmType','${r.id}')" style="line-height:1.4">${r.l}<span style="display:block;font-size:9px;opacity:.6;font-weight:600">${r.hr} bpm</span></button>`).join('')}
+          ${rhy.map(r=>`<button class="rhy-btn${LV.rhythmType===r.id?' on':''}" onclick="setLV('rhythmType','${r.id}')" style="line-height:1.4">${r.l}<span style="display:block;font-size:9px;opacity:.6;font-weight:600">${r.hr!=null?r.hr+' bpm':'－'}</span></button>`).join('')}
         </div>
         <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">掃引速度</div>
         <div class="flex g2">
@@ -1298,20 +1311,25 @@ function deletePreset(idx){
 // リズム選択時にHRを自動セット
 const RHYTHM_DEFAULT_HR = {
   'SR':      72,
-  'ST':     120,   // 洞性頻脈
-  'SB':      48,   // 洞性徐脈
+  'ST':     120,
+  'SB':      48,
   'Af':      88,
   '1st_AVB': 65,
   '2nd_AVB': 60,
-  '3rd_AVB': 40,   // 補充収縮（遅い）
+  '3rd_AVB': 40,
   'VT':     180,
+  'VF':      null,   // VF: HRは計測不能
   'ST_ELEV': 88,
 };
 function setLV(k,v){
   LV[k]=v;
-  // リズム変更時はHRを推奨値に自動セット
-  if(k==='rhythmType' && RHYTHM_DEFAULT_HR[v]!==undefined){
-    LV.hr = String(RHYTHM_DEFAULT_HR[v]);
+  if(k==='rhythmType'){
+    const def = RHYTHM_DEFAULT_HR[v];
+    if(def===null){
+      LV.hr = '－';  // VF: HR計測不能
+    } else if(def!==undefined){
+      LV.hr = String(def);
+    }
   }
   renderMain();
 }
