@@ -80,7 +80,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 .spd-btn{flex:1;padding:9px 6px;border-radius:10px;font-size:11px;font-weight:800;background:var(--s2);color:var(--t2);border:2px solid transparent;cursor:pointer;transition:all .15s}
 .spd-btn.on{background:#eff6ff;border-color:var(--blue);color:var(--blue)}
 /* ECG / Participant */
-#G-part{height:100dvh;height:-webkit-fill-available;background:var(--bg);color:#fff;display:flex;flex-direction:column;overflow:hidden;padding:14px;padding-bottom:max(14px,env(safe-area-inset-bottom))}
+#G-part{height:100dvh;height:-webkit-fill-available;background:var(--bg);color:#fff;display:flex;flex-direction:column;overflow:hidden;padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
 .vp{background:#000;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .vl{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.45;margin-bottom:3px}
 .vv{font-size:clamp(28px,5vw,58px);font-weight:900;line-height:1}
@@ -137,12 +137,10 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
   .tab-icon{font-size:18px}
   .inst-main{padding:12px;padding-bottom:68px}
   .inst-body{flex-direction:column}
-  #pv-wrap{flex-direction:row!important;flex-wrap:nowrap!important;width:100%!important;height:auto!important;overflow-x:auto;gap:6px!important}
-  #pv-wrap .vp{flex:1;min-width:64px;padding:8px 6px!important}
-  .vv{font-size:clamp(16px,4vw,34px)!important}
-  .vl{font-size:9px!important}
-  #part-body{flex-direction:column!important}
-  #ecg-area{min-height:180px}
+  #part-top{height:160px!important}
+  #pv-wrap{width:110px!important}
+  .vv{font-size:clamp(14px,4vw,28px)!important}
+  .vl{font-size:8px!important}
   .fc{padding:12px}
   .modal{border-radius:20px 20px 0 0;position:fixed;bottom:0;left:0;right:0;max-width:100%;margin:0;padding:22px 18px 36px}
   .modal-bg{align-items:flex-end;padding:0}
@@ -152,14 +150,11 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 @media(max-height:500px) and (orientation:landscape){
   /* 参加者画面: バイタルを左列・ECGを右に横並び */
   #G-part{padding:6px 10px}
-  #part-body{flex-direction:row!important;gap:8px}
-  #pv-wrap{flex-direction:column!important;width:120px!important;flex-shrink:0;gap:4px!important;height:100%}
-  #pv-wrap .vp{flex:1;min-width:0;padding:6px 8px!important}
-  .vv{font-size:clamp(14px,3vh,28px)!important}
+  #part-top{height:140px!important}
+  #pv-wrap{width:100px!important}
+  .vv{font-size:clamp(12px,3vh,24px)!important}
   .vl{font-size:8px!important}
-  #ecg-area{flex:1;min-height:0}
-  /* 参加者画面のナビを細く */
-  #G-part nav{height:26px;margin-bottom:4px}
+  #G-part nav{height:24px;margin-bottom:4px}
   /* 想定者: サイドバーを復活（横向きは広いので底タブ不要）*/
   .inst-side{
     position:relative!important;bottom:auto!important;
@@ -275,44 +270,60 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 
 <!-- Participant -->
 <div id="G-part" style="display:none">
-  <nav style="height:34px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:0 6px;flex-shrink:0">
+  <!-- ナビ -->
+  <nav style="height:32px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;padding:0 4px;flex-shrink:0">
     <div class="flex ac g2"><div class="ldot"></div><span style="font-size:10px;font-weight:900;letter-spacing:.4em;color:rgba(255,255,255,.22)">LIVE</span></div>
-    <button onclick="exitAndLogout()" style="background:none;color:rgba(255,255,255,.22);font-size:10px;font-weight:900;letter-spacing:.12em;padding:6px 12px;border:1px solid rgba(255,255,255,.07);border-radius:999px">退室</button>
+    <button onclick="exitAndLogout()" style="background:none;color:rgba(255,255,255,.22);font-size:10px;font-weight:900;letter-spacing:.12em;padding:5px 10px;border:1px solid rgba(255,255,255,.07);border-radius:999px">退室</button>
   </nav>
-  <div style="flex:1;display:flex;gap:12px;min-height:0;flex-wrap:wrap" id="part-body">
-    <!-- vitals column -->
-    <div id="pv-wrap" style="display:flex;flex-direction:column;gap:8px;width:160px;flex-shrink:0;min-width:0">
-      <div class="vp f1"><div class="vl" style="color:#ff4444">HR</div><div class="vv" id="pv-hr" style="color:#ff4444">--</div></div>
-      <div class="vp f1"><div class="vl" style="color:#4ade80">BP</div><div class="vv" id="pv-bp" style="color:#4ade80;font-size:clamp(18px,3.5vw,36px)">--/--</div></div>
-      <div class="vp f1"><div class="vl" style="color:#60a5fa">SpO₂</div><div class="vv" id="pv-spo2" style="color:#60a5fa">--</div></div>
-      <div class="vp f1"><div class="vl" style="color:#fb923c">Temp</div><div class="vv" id="pv-temp" style="color:#fb923c;font-size:clamp(18px,3vw,32px)">--°C</div></div>
-    </div>
+
+  <!-- 上段: ECG＋バイタル数値（横並び） -->
+  <div id="part-top" style="display:flex;gap:8px;flex-shrink:0;height:200px">
     <!-- ECG -->
-    <div style="flex:1;position:relative;transition:opacity .6s,filter .6s" id="ecg-area">
+    <div style="flex:1;position:relative;min-width:0" id="ecg-area">
       <div class="ecg-wrap hf">
         <div class="ecg-grid-bg"></div>
         <canvas id="ecg-canvas"></canvas>
-        <!-- 待機中表示（showVitals=falseのとき） -->
         <div id="ecg-standby" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;pointer-events:none">
-          <div style="color:rgba(255,255,255,.12);font-size:40px;margin-bottom:10px">📡</div>
-          <div style="color:rgba(255,255,255,.15);font-size:11px;font-weight:900;letter-spacing:.3em;text-transform:uppercase">No Signal</div>
-          <div style="color:rgba(255,255,255,.08);font-size:10px;margin-top:6px">想定者がモニターを更新するまで待機</div>
+          <div style="color:rgba(255,255,255,.12);font-size:32px;margin-bottom:8px">📡</div>
+          <div style="color:rgba(255,255,255,.15);font-size:10px;font-weight:900;letter-spacing:.3em;text-transform:uppercase">No Signal</div>
+          <div style="color:rgba(255,255,255,.07);font-size:9px;margin-top:4px">想定者がモニターを更新するまで待機</div>
         </div>
         <div class="ecg-label" id="ecg-label-wrap" style="display:none">
-          <div style="color:rgba(0,255,65,.45);font-size:11px;font-weight:700">Lead II</div>
-          <div id="ecg-rhy-lbl" style="color:rgba(0,255,65,.2);font-size:9px;text-transform:uppercase">SR SIGNAL</div>
+          <div style="color:rgba(0,255,65,.45);font-size:10px;font-weight:700">Lead II</div>
+          <div id="ecg-rhy-lbl" style="color:rgba(0,255,65,.2);font-size:8px;text-transform:uppercase">SR SIGNAL</div>
         </div>
         <div class="ecg-rr" id="ecg-rr-wrap" style="display:none">
-          <div style="color:rgba(0,200,255,.35);font-size:9px;font-weight:800;text-transform:uppercase">Respiratory Rate</div>
-          <div id="pv-rr" style="color:rgba(0,200,255,.65);font-size:20px;font-weight:900">-- /min</div>
+          <div style="color:rgba(0,200,255,.35);font-size:8px;font-weight:800;text-transform:uppercase">RR</div>
+          <div id="pv-rr" style="color:rgba(0,200,255,.65);font-size:16px;font-weight:900">-- /min</div>
         </div>
       </div>
-      <!-- Findings overlay (inside ECG area) -->
-      <div id="fo" style="display:none;position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.45);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:20px">
-        <div id="fo-inner" style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:800px;max-height:90vh;overflow-y:auto"></div>
+    </div>
+    <!-- バイタル数値（縦列） -->
+    <div id="pv-wrap" style="display:flex;flex-direction:column;gap:6px;width:130px;flex-shrink:0">
+      <div class="vp" style="flex:1;padding:8px 12px">
+        <div class="vl" style="color:#ff4444;font-size:9px">HR</div>
+        <div class="vv" id="pv-hr" style="color:#ff4444;font-size:clamp(24px,4vw,44px)">--</div>
+      </div>
+      <div class="vp" style="flex:1;padding:8px 12px">
+        <div class="vl" style="color:#4ade80;font-size:9px">BP</div>
+        <div class="vv" id="pv-bp" style="color:#4ade80;font-size:clamp(16px,2.8vw,28px)">--/--</div>
+      </div>
+      <div class="vp" style="flex:1;padding:8px 12px">
+        <div class="vl" style="color:#60a5fa;font-size:9px">SpO₂</div>
+        <div class="vv" id="pv-spo2" style="color:#60a5fa;font-size:clamp(20px,3.5vw,36px)">--</div>
+      </div>
+      <div class="vp" style="flex:1;padding:8px 12px">
+        <div class="vl" style="color:#fb923c;font-size:9px">Temp</div>
+        <div class="vv" id="pv-temp" style="color:#fb923c;font-size:clamp(16px,2.5vw,26px)">--°C</div>
       </div>
     </div>
   </div>
+
+  <!-- 下段: 所見・ABCDE表示エリア（横スクロール） -->
+  <div id="fo" style="display:none;flex:1;margin-top:8px;overflow:hidden">
+    <div id="fo-inner" style="display:flex;flex-direction:row;gap:10px;height:100%;padding:2px 0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:thin"></div>
+  </div>
+
   <!-- Metro pill -->
   <div id="metro-pill" style="display:none" class="metro-pill">
     <div class="metro-dot" id="metro-dot"></div>
@@ -900,19 +911,19 @@ function renderFO(s){
   _lastFOKey=foKey;
 
   fo.style.display='flex'; inner.innerHTML='';
-  active.forEach(f=>{
+  inner.style.flexDirection='row';
+    active.forEach(f=>{
     const d=document.createElement('div');
     d.className='fo-card';
-    // テキスト部分は innerHTML で安全に構築
+    d.style.cssText='flex:0 0 auto;width:260px;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;box-sizing:border-box';
     d.innerHTML=`
-      <div class="fo-img-wrap"></div>
-      <div style="color:#93c5fd;font-size:11px;font-weight:900;text-transform:uppercase;margin-bottom:6px;letter-spacing:.1em">${esc(f.label)}</div>
-      <div style="font-size:clamp(18px,3vw,26px);font-weight:900;line-height:1.3;color:#fff">${esc(f.description)}</div>`;
-    // 画像は createElement で src をセット（base64の長い文字列をinnerHTMLに入れない）
+      <div class="fo-img-wrap" style="width:100%;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0"></div>
+      <div style="color:#93c5fd;font-size:11px;font-weight:900;text-transform:uppercase;margin-top:8px;margin-bottom:4px;letter-spacing:.1em;text-align:center;flex-shrink:0">${esc(f.label)}</div>
+      <div style="font-size:clamp(13px,2vw,18px);font-weight:900;line-height:1.3;color:#fff;text-align:center;flex-shrink:0">${esc(f.description)}</div>`;
     if(f.type==='image' && f.url){
       const img=document.createElement('img');
       img.src=f.url;
-      img.style.cssText='max-height:220px;object-fit:contain;border-radius:14px;margin-bottom:16px;max-width:100%;display:block;margin-left:auto;margin-right:auto';
+      img.style.cssText='max-width:100%;max-height:100%;object-fit:contain;border-radius:10px;display:block';
       img.onerror=()=>{ img.style.display='none'; };
       d.querySelector('.fo-img-wrap').appendChild(img);
     }
@@ -921,8 +932,9 @@ function renderFO(s){
   if(hasSpeech){
     const d=document.createElement('div');
     d.className='fo-speech';
-    d.innerHTML=`<div style="font-size:38px;margin-bottom:14px">🎙️</div>
-      <div style="font-size:clamp(22px,4vw,42px);font-weight:900;line-height:1.3;color:#fff">${esc(s.isSpeakingText)}</div>`;
+    d.style.cssText='flex:0 0 auto;width:260px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box';
+    d.innerHTML=`<div style="font-size:32px;margin-bottom:12px">🎙️</div>
+      <div style="font-size:clamp(18px,3vw,32px);font-weight:900;line-height:1.4;color:#fff;text-align:center">${esc(s.isSpeakingText)}</div>`;
     inner.appendChild(d);
   }
   // ABCDE 口頭付与の表示
@@ -930,11 +942,11 @@ function renderFO(s){
     const key = ab.activeKey;
     const labels = {A:'気道 (Airway)',B:'呼吸 (Breathing)',C:'循環 (Circulation)',D:'意識 (Disability)',E:'体温・外表 (Exposure)'};
     const d=document.createElement('div');
-    d.style.cssText='background:rgba(37,99,235,.88);border:2px solid rgba(255,255,255,.2);border-radius:26px;padding:28px 32px;text-align:center;animation:scIn .3s ease-out';
+    d.style.cssText='flex:0 0 auto;width:280px;height:100%;background:rgba(37,99,235,.88);border:2px solid rgba(255,255,255,.2);border-radius:22px;padding:20px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box';
     d.innerHTML=`
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.2);font-size:20px;font-weight:900;color:#fff;margin-bottom:12px">${key}</div>
-      <div style="font-size:12px;font-weight:800;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">${labels[key]||''}</div>
-      <div style="font-size:clamp(20px,3.5vw,34px);font-weight:900;line-height:1.4;color:#fff">${esc(ab[key])}</div>`;
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.2);font-size:18px;font-weight:900;color:#fff;margin-bottom:10px">${key}</div>
+      <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">${labels[key]||''}</div>
+      <div style="font-size:clamp(16px,3vw,28px);font-weight:900;line-height:1.4;color:#fff">${esc(ab[key])}</div>`;
     inner.appendChild(d);
   }
 }
