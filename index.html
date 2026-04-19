@@ -92,8 +92,8 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 /* Finding overlay */
 .fo-wrap{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:24px}
 .fo-grid{display:flex;flex-direction:column;gap:14px;width:100%;max-width:820px}
-.fo-card{background:rgba(8,12,24,.94);border:2px solid var(--blue);border-radius:26px;padding:28px;text-align:center;animation:scIn .3s ease-out;overflow:hidden}
-.fo-speech{background:rgba(30,58,180,.85);border:2px solid rgba(255,255,255,.15);border-radius:26px;padding:32px;text-align:center;animation:scIn .3s ease-out}
+.fo-card{background:rgba(8,12,24,.94);border:2px solid var(--blue);border-radius:26px;padding:28px;text-align:center;overflow:hidden}
+.fo-speech{background:rgba(30,58,180,.85);border:2px solid rgba(255,255,255,.15);border-radius:26px;padding:32px;text-align:center}
 @keyframes scIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
 /* Metro indicator */
 .metro-pill{position:fixed;bottom:20px;right:20px;background:rgba(224,53,53,.18);border:1px solid rgba(224,53,53,.35);backdrop-filter:blur(8px);border-radius:18px;padding:12px 18px;display:flex;align-items:center;gap:10px;color:#fff;animation:scIn .4s ease-out}
@@ -878,6 +878,7 @@ function applyPartState(s,prev){
   }
 }
 
+let _lastFOKey = '';
 function renderFO(s){
   const all=[...pf(curCase).Pre||[],...pf(curCase).Init||[],...pf(curCase).Full||[]];
   const active=all.filter(f=>(s.activeFindingIds||[]).includes(f.id));
@@ -886,7 +887,18 @@ function renderFO(s){
   const hasAbcde = ab.activeKey && ab[ab.activeKey];
   const fo=$('fo'), inner=$('fo-inner');
   if(!fo||!inner) return;
-  if(!active.length&&!hasSpeech&&!hasAbcde){ fo.style.display='none'; return; }
+  if(!active.length&&!hasSpeech&&!hasAbcde){ fo.style.display='none'; _lastFOKey=''; return; }
+
+  // 内容が変わっていなければ再描画しない（画像の点滅防止）
+  const foKey = JSON.stringify({
+    ids:(s.activeFindingIds||[]).slice().sort(),
+    speech:s.isSpeakingText||'',
+    abcdeKey:ab.activeKey||'',
+    abcdeVal:ab.activeKey?ab[ab.activeKey]||'':''
+  });
+  if(foKey===_lastFOKey){ fo.style.display='flex'; return; }
+  _lastFOKey=foKey;
+
   fo.style.display='flex'; inner.innerHTML='';
   active.forEach(f=>{
     const d=document.createElement('div');
@@ -1112,7 +1124,7 @@ function startMetro(){
 }
 function _metroTick(){
   if(!SS.metronome.on||!audioOn){ metroTimer=null; return; }
-  // 想定者にはメトロノーム音を出さない（実施者のみ鳴る）
+  // 実施者のみメトロノーム音を鳴らす（想定者は無音）
   if(role==='participant'){
     try{
       if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
