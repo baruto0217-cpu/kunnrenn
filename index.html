@@ -301,7 +301,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
     <div id="pv-wrap" style="width:clamp(180px,38vw,480px);flex-shrink:0;display:flex;flex-direction:column;gap:32px;height:100%;background:#000;border-right:1px solid #1a1a1a;transition:width .3s;overflow:hidden;padding:16px 6px">
 
       <!-- HR -->
-      <div style="flex:1;border-radius:6px;background:#0f0000;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:2px">
+      <div style="flex:1;border-radius:6px;background:#0f0000;padding:3px 8px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:1px">
         <div style="color:#ff6666;font-size:clamp(11px,1.5vh,16px);font-weight:900;letter-spacing:.12em">HR</div>
         <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
           <span id="pv-hr" style="color:#ff2222;font-size:clamp(36px,7vh,88px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
@@ -310,7 +310,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       </div>
 
       <!-- SpO₂ -->
-      <div style="flex:1;border-radius:6px;background:#00080f;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:2px">
+      <div style="flex:1;border-radius:6px;background:#00080f;padding:3px 8px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:1px">
         <div style="color:#00ddff;font-size:clamp(11px,1.5vh,16px);font-weight:900;letter-spacing:.08em">SpO₂</div>
         <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
           <span id="pv-spo2" style="color:#00ddff;font-size:clamp(32px,6.5vh,78px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
@@ -319,7 +319,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       </div>
 
       <!-- BP -->
-      <div style="flex:1;border-radius:6px;background:#0f0f00;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:2px">
+      <div style="flex:1;border-radius:6px;background:#0f0f00;padding:3px 8px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:1px">
         <div style="color:#ffee00;font-size:clamp(11px,1.5vh,16px);font-weight:900;letter-spacing:.08em">NIBP</div>
         <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
           <span id="pv-bp" style="color:#ffee00;font-size:clamp(22px,5vh,60px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--/--</span>
@@ -328,7 +328,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       </div>
 
       <!-- Temp -->
-      <div style="flex:1;border-radius:6px;background:#0f0700;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:2px">
+      <div style="flex:1;border-radius:6px;background:#0f0700;padding:3px 8px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:1px">
         <div style="color:#ff9800;font-size:clamp(11px,1.5vh,16px);font-weight:900;letter-spacing:.08em">TEMP</div>
         <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
           <span id="pv-temp" style="color:#ff9800;font-size:clamp(22px,5vh,58px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
@@ -337,7 +337,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       </div>
 
       <!-- RR -->
-      <div style="flex:1;border-radius:6px;background:#0a0a0a;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:2px">
+      <div style="flex:1;border-radius:6px;background:#0a0a0a;padding:3px 8px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:1px">
         <div style="color:#ccc;font-size:clamp(11px,1.5vh,16px);font-weight:900;letter-spacing:.08em">RR</div>
         <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
           <span id="pv-rr" style="color:#ddd;font-size:clamp(26px,5.5vh,68px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
@@ -492,6 +492,7 @@ let cases = [], demoCases = [
   {id:'d1',title:'心肺停止症例（基本）',findings:{Pre:[],Init:[],Full:[]},created_at:0},
   {id:'d2',title:'急性心筋梗塞疑い',findings:{Pre:[],Init:[],Full:[]},created_at:0}
 ];
+let abcdeLocal = { A:'', B:'', C:'', D:'', E:'' }; // ローカル入力バッファ（未送信）
 let SS = { // session state
   activeFindingIds:[], playingSoundUrl:null, isSpeakingText:null,
   speechUrl:null, speechId:null,
@@ -796,7 +797,14 @@ function applySession(data){
     if(data.metronome!=null) SS.metronome=typeof data.metronome==='string'?JSON.parse(data.metronome):data.metronome;
     if(data.vitals!=null) SS.vitals=typeof data.vitals==='string'?JSON.parse(data.vitals):data.vitals;
     if(data.show_vitals!=null) SS.showVitals=data.show_vitals;
-    if(data.abcde!=null) SS.abcde=typeof data.abcde==='string'?JSON.parse(data.abcde):data.abcde;
+    if(data.abcde!=null){
+      SS.abcde=typeof data.abcde==='string'?JSON.parse(data.abcde):data.abcde;
+      // ローカルバッファも同期（フォーカス中でなければ）
+      ['A','B','C','D','E'].forEach(k=>{
+        const el=document.getElementById('abcde-ta-'+k);
+        if(!el || document.activeElement!==el) abcdeLocal[k]=SS.abcde[k]||'';
+      });
+    }
   }catch(e){ console.error(e); }
   // メトロノームのON/OFFが変化したら即反映
   const metroWasOn = prev.metronome?.on;
@@ -1268,7 +1276,14 @@ function toggleEdit(){
 function renderMain(){
   const m=$('inst-main'); if(!m) return;
   if(activeTab==='Vital'){ m.innerHTML=vitalHTML(); return; }
-  if(activeTab==='Init'){ m.innerHTML=initHTML()+findingsHTML('Init'); return; }
+  if(activeTab==='Init'){
+    // フォーカス中のABCDEテキストエリアがあれば再描画しない
+    const focusedTA = document.activeElement;
+    if(focusedTA && focusedTA.id && focusedTA.id.startsWith('abcde-ta-')){
+      return; // 入力中は再描画しない
+    }
+    m.innerHTML=initHTML()+findingsHTML('Init'); return;
+  }
   if(activeTab==='Pre'){ m.innerHTML=findingsHTML('Pre'); return; }
   if(activeTab==='Full'){
     if(!bodyPart){ m.innerHTML=bodyMapHTML(); return; }
@@ -1538,7 +1553,9 @@ function initHTML(){
             </div>
             <div style="display:flex;gap:6px">
               <textarea
-                oninput="updateAbcde('${key}',this.value)"
+                id="abcde-ta-${key}"
+                oninput="abcdeLocal['${key}']=this.value"
+                onblur="updateAbcde('${key}',this.value)"
                 placeholder="${ph}"
                 style="flex:1;background:var(--s1);border:2px solid ${val?'var(--blue)':'transparent'};border-radius:10px;padding:10px 12px;font-size:13px;color:var(--t0);resize:none;height:64px;font-family:inherit;line-height:1.5;transition:border-color .2s;outline:none">${esc(val)}</textarea>
               <div style="display:flex;flex-direction:column;gap:4px">
