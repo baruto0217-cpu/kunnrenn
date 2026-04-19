@@ -277,49 +277,49 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
   </nav>
 
   <!-- 上段: バイタル数値（左）＋ECG（右） -->
-  <div id="part-top" style="display:flex;gap:8px;flex-shrink:0;height:280px">
-    <!-- バイタル数値（左列: HR・RR・BP・SpO2・Temp 等間隔） -->
-    <div id="pv-wrap" style="display:flex;flex-direction:column;justify-content:space-between;width:160px;flex-shrink:0;height:100%;padding:4px 0">
+  <div id="part-top" style="display:flex;gap:10px;flex-shrink:0;height:300px">
+    <!-- バイタル数値（左列） -->
+    <div id="pv-wrap" style="width:150px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;height:100%">
 
-      <!-- HR（最上段） -->
-      <div class="vp" style="padding:10px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;flex:1;min-height:0">
-        <div style="color:#ff4444;font-size:11px;font-weight:900;letter-spacing:.1em;margin-bottom:2px">HR</div>
-        <div style="display:flex;align-items:baseline;gap:3px">
-          <div id="pv-hr" style="color:#ff4444;font-size:clamp(28px,4.5vw,46px);font-weight:900;line-height:1">--</div>
-          <div style="color:rgba(255,68,68,.45);font-size:11px;font-weight:700">/min</div>
+      <!-- HR -->
+      <div style="flex:1;background:#1a0a0a;border-left:4px solid #ff4444;border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center">
+        <div style="color:#ff6666;font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px">HR</div>
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <span id="pv-hr" style="color:#ff4444;font-size:36px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(255,68,68,.5);font-size:12px;font-weight:700">/min</span>
         </div>
       </div>
 
       <!-- RR -->
-      <div class="vp" style="padding:10px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;flex:1;min-height:0">
-        <div style="color:rgba(0,200,255,.7);font-size:11px;font-weight:900;letter-spacing:.1em;margin-bottom:2px">RR</div>
-        <div style="display:flex;align-items:baseline;gap:3px">
-          <div id="pv-rr" style="color:rgba(0,200,255,.9);font-size:clamp(22px,3.5vw,36px);font-weight:900;line-height:1">--</div>
-          <div style="color:rgba(0,200,255,.35);font-size:11px;font-weight:700">/min</div>
+      <div style="flex:1;background:#001a1f;border-left:4px solid #00c8ff;border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center">
+        <div style="color:#4dd9ff;font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px">RR</div>
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <span id="pv-rr" style="color:#00c8ff;font-size:30px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(0,200,255,.45);font-size:12px;font-weight:700">/min</span>
         </div>
       </div>
 
       <!-- BP -->
-      <div class="vp" style="padding:10px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;flex:1;min-height:0">
-        <div style="color:#4ade80;font-size:11px;font-weight:900;letter-spacing:.1em;margin-bottom:2px">BP</div>
-        <div id="pv-bp" style="color:#4ade80;font-size:clamp(18px,2.8vw,28px);font-weight:900;line-height:1">--/--</div>
+      <div style="flex:1;background:#001a0a;border-left:4px solid #4ade80;border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center">
+        <div style="color:#6ee89a;font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px">BP</div>
+        <span id="pv-bp" style="color:#4ade80;font-size:24px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--/--</span>
       </div>
 
       <!-- SpO₂ -->
-      <div class="vp" style="padding:10px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;flex:1;min-height:0">
-        <div style="color:#60a5fa;font-size:11px;font-weight:900;letter-spacing:.1em;margin-bottom:2px">SpO₂</div>
+      <div style="flex:1;background:#060a1f;border-left:4px solid #60a5fa;border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center">
+        <div style="color:#80b8fc;font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px">SpO₂</div>
         <div style="display:flex;align-items:baseline;gap:3px">
-          <div id="pv-spo2" style="color:#60a5fa;font-size:clamp(22px,3.5vw,36px);font-weight:900;line-height:1">--</div>
-          <div style="color:rgba(96,165,250,.4);font-size:11px;font-weight:700">%</div>
+          <span id="pv-spo2" style="color:#60a5fa;font-size:30px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(96,165,250,.5);font-size:12px;font-weight:700">%</span>
         </div>
       </div>
 
-      <!-- Temp（最下段） -->
-      <div class="vp" style="padding:10px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;flex:1;min-height:0">
-        <div style="color:#fb923c;font-size:11px;font-weight:900;letter-spacing:.1em;margin-bottom:2px">Temp</div>
+      <!-- Temp -->
+      <div style="flex:1;background:#1a0d00;border-left:4px solid #fb923c;border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center">
+        <div style="color:#fcaa64;font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px">Temp</div>
         <div style="display:flex;align-items:baseline;gap:3px">
-          <div id="pv-temp" style="color:#fb923c;font-size:clamp(18px,2.8vw,28px);font-weight:900;line-height:1">--</div>
-          <div style="color:rgba(251,146,60,.4);font-size:11px;font-weight:700">°C</div>
+          <span id="pv-temp" style="color:#fb923c;font-size:24px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(251,146,60,.5);font-size:12px;font-weight:700">°C</span>
         </div>
       </div>
 
