@@ -138,7 +138,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
   .inst-main{padding:12px;padding-bottom:68px}
   .inst-body{flex-direction:column}
   #part-top{height:auto!important;flex:1}
-  #pv-wrap{width:170px!important}
+  #pv-wrap{width:145px!important}
   .fc{padding:12px}
   .modal{border-radius:20px 20px 0 0;position:fixed;bottom:0;left:0;right:0;max-width:100%;margin:0;padding:22px 18px 36px}
   .modal-bg{align-items:flex-end;padding:0}
@@ -147,7 +147,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 /* ── タブレット・PC（768px以上）── */
 @media(min-width:768px){
   #G-part{padding:8px 12px;padding-bottom:max(8px,env(safe-area-inset-bottom))}
-  #pv-wrap{width:clamp(260px,45vw,580px)!important}
+  #pv-wrap{width:clamp(200px,36vw,460px)!important}
   .inst-main{padding:32px 40px}
   .cases-grid{max-width:100%}
   .role-grid{max-width:700px;gap:32px}
@@ -156,7 +156,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 }
 /* ── 大画面PC（1200px以上）── */
 @media(min-width:1200px){
-  #pv-wrap{width:clamp(340px,48vw,700px)!important}
+  #pv-wrap{width:clamp(220px,36vw,500px)!important}
   .inst-side{width:100px}
   .tab-btn{font-size:11px;padding:14px 8px}
   .tab-icon{font-size:22px}
@@ -167,7 +167,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
   /* 参加者画面: バイタルを左列・ECGを右に横並び */
   #G-part{padding:6px 10px}
   #part-top{height:auto!important;flex:1}
-  #pv-wrap{width:150px!important}
+  #pv-wrap{width:120px!important}
   #G-part nav{height:24px;margin-bottom:4px}
   #pv-wrap span[style*="font-size:52px"]{font-size:32px!important}
   #pv-wrap span[style*="font-size:42px"]{font-size:28px!important}
@@ -297,60 +297,50 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
   <div id="part-top" style="display:flex;gap:0;flex:1;min-height:0;background:#000;overflow:hidden;border:1px solid #1a1a1a;border-radius:8px">
 
     <!-- バイタル数値（左列・日本光電スタイル） -->
-    <div id="pv-wrap" style="width:clamp(220px,48vw,600px);flex-shrink:0;display:flex;flex-direction:column;gap:8px;height:100%;background:#000;border-right:1px solid #2a2a2a;transition:width .3s;overflow:hidden;padding:8px 0">
+    <div id="pv-wrap" style="width:clamp(180px,38vw,480px);flex-shrink:0;display:flex;flex-direction:column;gap:5px;height:100%;background:#000;border-right:1px solid #1a1a1a;transition:width .3s;overflow:hidden;padding:5px 6px">
 
       <!-- HR -->
-      <div style="flex:1;border-bottom:1px solid #1e1e1e;padding:10px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:0">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:1px solid rgba(255,85,85,.12)">
-          <span style="color:#ff6666;font-size:clamp(13px,1.8vh,20px);font-weight:900;letter-spacing:.15em">HR</span>
-          <span style="color:rgba(255,34,34,.35);font-size:clamp(11px,1.4vh,15px);font-weight:700">/min</span>
-        </div>
-        <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;padding:4px 0">
-          <span id="pv-hr" style="color:#ff2222;font-size:clamp(44px,9vh,110px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+      <div style="flex:1;border-radius:6px;background:#0f0000;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:2px">
+        <div style="color:#ff6666;font-size:clamp(11px,1.5vh,16px);font-weight:900;letter-spacing:.12em">HR</div>
+        <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
+          <span id="pv-hr" style="color:#ff2222;font-size:clamp(36px,7vh,88px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(255,34,34,.4);font-size:clamp(10px,1.3vh,14px);font-weight:700">/min</span>
         </div>
       </div>
 
       <!-- SpO₂ -->
-      <div style="flex:1;border-bottom:1px solid #1e1e1e;padding:10px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:0">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:1px solid rgba(0,221,255,.12)">
-          <span style="color:#00ddff;font-size:clamp(13px,1.8vh,20px);font-weight:900;letter-spacing:.1em">SpO₂</span>
-          <span style="color:rgba(0,221,255,.4);font-size:clamp(11px,1.4vh,15px);font-weight:700">%</span>
-        </div>
-        <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;padding:4px 0">
-          <span id="pv-spo2" style="color:#00ddff;font-size:clamp(40px,8.5vh,96px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+      <div style="flex:1;border-radius:6px;background:#00080f;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:2px">
+        <div style="color:#00ddff;font-size:clamp(11px,1.5vh,16px);font-weight:900;letter-spacing:.08em">SpO₂</div>
+        <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
+          <span id="pv-spo2" style="color:#00ddff;font-size:clamp(32px,6.5vh,78px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(0,221,255,.4);font-size:clamp(10px,1.3vh,14px);font-weight:700">%</span>
         </div>
       </div>
 
       <!-- BP -->
-      <div style="flex:1;border-bottom:1px solid #1e1e1e;padding:10px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:0">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:1px solid rgba(255,238,0,.12)">
-          <span style="color:#ffee00;font-size:clamp(13px,1.8vh,20px);font-weight:900;letter-spacing:.1em">NIBP</span>
-          <span style="color:rgba(255,238,0,.4);font-size:clamp(11px,1.4vh,15px);font-weight:700">mmHg</span>
-        </div>
-        <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;padding:4px 0">
-          <span id="pv-bp" style="color:#ffee00;font-size:clamp(26px,6vh,72px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--/--</span>
+      <div style="flex:1;border-radius:6px;background:#0f0f00;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:2px">
+        <div style="color:#ffee00;font-size:clamp(11px,1.5vh,16px);font-weight:900;letter-spacing:.08em">NIBP</div>
+        <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
+          <span id="pv-bp" style="color:#ffee00;font-size:clamp(22px,5vh,60px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--/--</span>
+          <span style="color:rgba(255,238,0,.35);font-size:clamp(10px,1.3vh,14px);font-weight:700">mmHg</span>
         </div>
       </div>
 
       <!-- Temp -->
-      <div style="flex:1;border-bottom:1px solid #1e1e1e;padding:10px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:0">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:1px solid rgba(255,152,0,.12)">
-          <span style="color:#ff9800;font-size:clamp(13px,1.8vh,20px);font-weight:900;letter-spacing:.1em">TEMP</span>
-          <span style="color:rgba(255,152,0,.4);font-size:clamp(11px,1.4vh,15px);font-weight:700">°C</span>
-        </div>
-        <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;padding:4px 0">
-          <span id="pv-temp" style="color:#ff9800;font-size:clamp(26px,6vh,68px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+      <div style="flex:1;border-radius:6px;background:#0f0700;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:2px">
+        <div style="color:#ff9800;font-size:clamp(11px,1.5vh,16px);font-weight:900;letter-spacing:.08em">TEMP</div>
+        <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
+          <span id="pv-temp" style="color:#ff9800;font-size:clamp(22px,5vh,58px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(255,152,0,.4);font-size:clamp(10px,1.3vh,14px);font-weight:700">°C</span>
         </div>
       </div>
 
       <!-- RR -->
-      <div style="flex:1;padding:10px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:0">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:1px solid rgba(200,200,200,.1)">
-          <span style="color:#ccc;font-size:clamp(13px,1.8vh,20px);font-weight:900;letter-spacing:.1em">RR</span>
-          <span style="color:rgba(200,200,200,.35);font-size:clamp(11px,1.4vh,15px);font-weight:700">/min</span>
-        </div>
-        <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;padding:4px 0">
-          <span id="pv-rr" style="color:#ddd;font-size:clamp(30px,6.5vh,80px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+      <div style="flex:1;border-radius:6px;background:#0a0a0a;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:2px">
+        <div style="color:#ccc;font-size:clamp(11px,1.5vh,16px);font-weight:900;letter-spacing:.08em">RR</div>
+        <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
+          <span id="pv-rr" style="color:#ddd;font-size:clamp(26px,5.5vh,68px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(200,200,200,.35);font-size:clamp(10px,1.3vh,14px);font-weight:700">/min</span>
         </div>
       </div>
 
