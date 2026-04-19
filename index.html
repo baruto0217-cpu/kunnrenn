@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -150,37 +149,35 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 
 /* ── スマホ横向き（landscape）── */
 @media(max-height:500px) and (orientation:landscape){
-/* 参加者画面: バイタルを左列・ECGを右に横並び */
-#G-part{padding:6px 10px}
-#part-body{flex-direction:row!important;gap:8px}
-#pv-wrap{flex-direction:column!important;width:120px!important;flex-shrink:0;gap:4px!important;height:100%}
-#pv-wrap .vp{flex:1;min-width:0;padding:6px 8px!important}
-.vv{font-size:clamp(14px,3vh,28px)!important}
-.vl{font-size:8px!important}
-#ecg-area{flex:1;min-height:0}
-/* 参加者画面のナビを細く */
-#G-part nav{height:26px;margin-bottom:4px}
-/* 想定者: サイドバーを復活（横向きは広いので底タブ不要）*/
-.inst-side{
-position:relative!important;bottom:auto!important;
-width:72px!important;height:auto!important;
-flex-direction:column!important;
-border-right:1px solid var(–b0)!important;border-top:none!important;
-}
-.tab-btn{flex-direction:column!important;height:auto!important;padding:10px 4px!important;font-size:8px!important}
-.inst-main{padding:12px!important;padding-bottom:12px!important}
-.inst-body{flex-direction:row!important}
-/* navを小さく */
-.inst-nav{padding:8px 14px}
-.cases-hdr{padding:10px 16px}
+  /* 参加者画面: バイタルを左列・ECGを右に横並び */
+  #G-part{padding:6px 10px}
+  #part-body{flex-direction:row!important;gap:8px}
+  #pv-wrap{flex-direction:column!important;width:120px!important;flex-shrink:0;gap:4px!important;height:100%}
+  #pv-wrap .vp{flex:1;min-width:0;padding:6px 8px!important}
+  .vv{font-size:clamp(14px,3vh,28px)!important}
+  .vl{font-size:8px!important}
+  #ecg-area{flex:1;min-height:0}
+  /* 参加者画面のナビを細く */
+  #G-part nav{height:26px;margin-bottom:4px}
+  /* 想定者: サイドバーを復活（横向きは広いので底タブ不要）*/
+  .inst-side{
+    position:relative!important;bottom:auto!important;
+    width:72px!important;height:auto!important;
+    flex-direction:column!important;
+    border-right:1px solid var(--b0)!important;border-top:none!important;
+  }
+  .tab-btn{flex-direction:column!important;height:auto!important;padding:10px 4px!important;font-size:8px!important}
+  .inst-main{padding:12px!important;padding-bottom:12px!important}
+  .inst-body{flex-direction:row!important}
+  /* navを小さく */
+  .inst-nav{padding:8px 14px}
+  .cases-hdr{padding:10px 16px}
 }
 </style>
-
 </head>
 <body>
 
 <!-- Loading -->
-
 <div id="G-loading" style="display:flex">
   <h1 style="font-size:30px;font-weight:900;letter-spacing:-.02em">救急シミュレーター</h1>
   <div class="spinner"></div>
@@ -188,7 +185,6 @@ border-right:1px solid var(–b0)!important;border-top:none!important;
 </div>
 
 <!-- Login -->
-
 <div id="G-config" style="display:none">
   <div style="text-align:center;margin-bottom:36px">
     <div style="font-size:52px;margin-bottom:14px">🚑</div>
@@ -207,7 +203,6 @@ border-right:1px solid var(–b0)!important;border-top:none!important;
 </div>
 
 <!-- Role -->
-
 <div id="G-role" style="display:none">
   <div style="text-align:center;margin-bottom:40px">
     <h1 style="font-size:clamp(22px,4vw,34px);font-weight:900;line-height:1.3">救急シミュレーター<br><span style="font-size:.55em;opacity:.3;font-weight:400">v19.2</span></h1>
@@ -229,7 +224,6 @@ border-right:1px solid var(–b0)!important;border-top:none!important;
 </div>
 
 <!-- Sync (Participant) -->
-
 <div id="G-sync" style="display:none">
   <div class="sync-ring">📡</div>
   <h2 style="font-size:34px;font-weight:900;margin:28px 0 12px">同期を開始します</h2>
@@ -238,7 +232,6 @@ border-right:1px solid var(–b0)!important;border-top:none!important;
 </div>
 
 <!-- Case list -->
-
 <div id="G-cases" style="display:none">
   <div class="cases-hdr">
     <button onclick="goLogin()" class="btn btn-ghost" style="min-height:44px;min-width:44px">← ログイン</button>
@@ -255,13 +248,14 @@ border-right:1px solid var(–b0)!important;border-top:none!important;
 </div>
 
 <!-- Instructor -->
-
 <div id="G-inst" style="display:none">
-  <nav class="inst-nav">
+  <nav class="inst-nav" style="flex-wrap:wrap;gap:8px">
     <div class="flex ac g3">
       <button onclick="exitCase()" class="btn btn-ghost" style="padding:8px 15px;font-size:12px">← 症例一覧</button>
-      <span style="font-size:16px;font-weight:900;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="inst-title">—</span>
+      <span style="font-size:16px;font-weight:900;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="inst-title">—</span>
     </div>
+    <!-- 同期済みバイタル表示 -->
+    <div id="vital-indicator" style="flex:1;text-align:center;font-size:11px;font-weight:800;color:var(--green);opacity:0;transition:opacity .4s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px;min-width:0"></div>
     <div class="flex ac g3">
       <button id="edit-btn" onclick="toggleEdit()" style="padding:8px 18px;border-radius:999px;font-size:12px;font-weight:800;background:var(--s2);color:var(--t1)">編集モード</button>
       <button onclick="goBack()" style="background:none;color:var(--t3);font-size:18px;padding:6px" title="初期画面へ">⬅</button>
@@ -279,7 +273,6 @@ border-right:1px solid var(–b0)!important;border-top:none!important;
 </div>
 
 <!-- Participant -->
-
 <div id="G-part" style="display:none">
   <nav style="height:34px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:0 6px;flex-shrink:0">
     <div class="flex ac g2"><div class="ldot"></div><span style="font-size:10px;font-weight:900;letter-spacing:.4em;color:rgba(255,255,255,.22)">LIVE</span></div>
@@ -327,7 +320,6 @@ border-right:1px solid var(–b0)!important;border-top:none!important;
 </div>
 
 <!-- Modal: Add case -->
-
 <div id="M-addcase" style="display:none" class="modal-bg">
   <div class="modal">
     <h3 style="font-size:20px;font-weight:900;margin-bottom:22px">新規症例登録</h3>
@@ -340,7 +332,6 @@ border-right:1px solid var(–b0)!important;border-top:none!important;
 </div>
 
 <!-- Modal: Finding form -->
-
 <div id="M-finding" style="display:none" class="modal-bg">
   <div class="modal" style="max-width:460px">
     <h3 style="font-size:19px;font-weight:900;margin-bottom:20px" id="fm-title">所見の登録</h3>
@@ -361,7 +352,6 @@ border-right:1px solid var(–b0)!important;border-top:none!important;
 </div>
 
 <!-- Audio -->
-
 <audio id="bg-audio" loop></audio>
 <audio id="sp-audio"></audio>
 
@@ -1118,9 +1108,12 @@ function vitalHTML(){
             <input class="ifield wf" value="${esc(LV[v]||'')}" onchange="LV['${v}']=this.value" placeholder="--">
           </div>`).join('')}
       </div>
-      <button onclick="pushVitals()" class="btn btn-red wf" style="padding:17px;font-size:15px;border-radius:15px">
+      <button onclick="pushVitals()" class="btn btn-red wf" style="padding:17px;font-size:15px;border-radius:15px;transition:background .3s">
         📤 モニターを更新・同期
       </button>
+      <div id="sync-status" style="display:none;margin-top:12px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 16px;font-size:13px;font-weight:800;color:#16a34a;text-align:center">
+        ✅ 実施者端末に同期しました
+      </div>
     </div>
   </div>`;
 }
@@ -1144,7 +1137,34 @@ function setLV(k,v){
   }
   renderMain();
 }
-function pushVitals(){ pushSession({vitals:{...LV},showVitals:true}); }
+async function pushVitals(){
+  const btn = document.querySelector('[onclick="pushVitals()"]');
+  if(btn){ btn.disabled=true; btn.innerHTML='⏳ 送信中...'; }
+  await pushSession({vitals:{...LV},showVitals:true});
+  // 送信完了フィードバック
+  if(btn){
+    btn.innerHTML='✅ 同期完了';
+    btn.style.background='var(--green)';
+    setTimeout(()=>{
+      btn.innerHTML='📤 モニターを更新・同期';
+      btn.style.background='';
+      btn.disabled=false;
+    }, 2000);
+  }
+  // ナビバーに現在のバイタル値を表示
+  const indicator = $('vital-indicator');
+  if(indicator){
+    indicator.textContent = `✅ 同期済 ｜ HR ${LV.hr||'--'} ／ BP ${LV.bpSys||'--'}/${LV.bpDia||'--'} ／ SpO₂ ${LV.spo2||'--'}% ／ ${LV.rhythmType||'SR'}`;
+    indicator.style.opacity='1';
+  }
+  // ボタン下のステータス表示
+  const ss=$('sync-status');
+  if(ss){
+    ss.style.display='block';
+    ss.innerHTML=`✅ 実施者端末に同期しました<br><span style="font-size:11px;font-weight:600;color:#15803d;opacity:.8">HR ${LV.hr||'--'} ／ BP ${LV.bpSys||'--'}/${LV.bpDia||'--'} ／ SpO₂ ${LV.spo2||'--'}% ／ RR ${LV.rr||'--'} ／ Temp ${LV.temp||'--'}°C ／ ${LV.rhythmType||'SR'}</span>`;
+    setTimeout(()=>{ ss.style.display='none'; }, 5000);
+  }
+}
 
 /* ====================================================
    INIT TAB (metronome)
@@ -1504,6 +1524,5 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ ['M-addcase','M-f
    --   Database > Replication > sim_sessions: ON)
    ==================================================== */
 </script>
-
 </body>
 </html>
