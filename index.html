@@ -278,29 +278,51 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 
   <!-- 上段: バイタル数値（左）＋ECG（右） -->
   <div id="part-top" style="display:flex;gap:8px;flex-shrink:0;height:220px">
-    <!-- バイタル数値（左列） -->
-    <div id="pv-wrap" style="display:flex;flex-direction:column;gap:6px;width:180px;flex-shrink:0">
-      <!-- HR: 最大サイズ -->
-      <div class="vp" style="flex:2;padding:12px 16px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start">
-        <div style="color:#ff4444;font-size:11px;font-weight:900;letter-spacing:.1em;margin-bottom:2px">HR</div>
-        <div id="pv-hr" style="color:#ff4444;font-size:clamp(48px,8vw,80px);font-weight:900;line-height:1">--</div>
-        <div style="color:rgba(255,68,68,.4);font-size:11px;font-weight:700">/min</div>
-      </div>
-      <!-- BP / SpO2 / Temp -->
-      <div style="display:flex;flex-direction:column;gap:5px;flex:1">
-        <div class="vp" style="padding:8px 12px;display:flex;justify-content:space-between;align-items:center;flex:1">
-          <div style="color:#4ade80;font-size:11px;font-weight:900">BP</div>
-          <div id="pv-bp" style="color:#4ade80;font-size:clamp(14px,2.5vw,22px);font-weight:900">--/--</div>
-        </div>
-        <div class="vp" style="padding:8px 12px;display:flex;justify-content:space-between;align-items:center;flex:1">
-          <div style="color:#60a5fa;font-size:11px;font-weight:900">SpO₂</div>
-          <div id="pv-spo2" style="color:#60a5fa;font-size:clamp(14px,2.5vw,22px);font-weight:900">--</div>
-        </div>
-        <div class="vp" style="padding:8px 12px;display:flex;justify-content:space-between;align-items:center;flex:1">
-          <div style="color:#fb923c;font-size:11px;font-weight:900">Temp</div>
-          <div id="pv-temp" style="color:#fb923c;font-size:clamp(14px,2.5vw,22px);font-weight:900">--°C</div>
+    <!-- バイタル数値（左列: 上からHR・RR・BP・SpO2・Temp） -->
+    <div id="pv-wrap" style="display:flex;flex-direction:column;gap:5px;width:175px;flex-shrink:0;height:100%">
+
+      <!-- HR（最上段・最大） -->
+      <div class="vp" style="flex:1;padding:8px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start">
+        <div style="color:#ff4444;font-size:10px;font-weight:900;letter-spacing:.08em;opacity:.7">HR</div>
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <div id="pv-hr" style="color:#ff4444;font-size:clamp(32px,5.5vw,56px);font-weight:900;line-height:1">--</div>
+          <div style="color:rgba(255,68,68,.4);font-size:10px;font-weight:700">/min</div>
         </div>
       </div>
+
+      <!-- RR（呼吸数） -->
+      <div class="vp" style="flex:1;padding:8px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start">
+        <div style="color:rgba(0,200,255,.6);font-size:10px;font-weight:900;letter-spacing:.08em;opacity:.7">RR</div>
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <div id="pv-rr" style="color:rgba(0,200,255,.85);font-size:clamp(22px,3.5vw,36px);font-weight:900;line-height:1">--</div>
+          <div style="color:rgba(0,200,255,.35);font-size:10px;font-weight:700">/min</div>
+        </div>
+      </div>
+
+      <!-- BP -->
+      <div class="vp" style="flex:1;padding:8px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start">
+        <div style="color:#4ade80;font-size:10px;font-weight:900;letter-spacing:.08em;opacity:.7">BP</div>
+        <div id="pv-bp" style="color:#4ade80;font-size:clamp(18px,2.8vw,28px);font-weight:900;line-height:1">--/--</div>
+      </div>
+
+      <!-- SpO2 -->
+      <div class="vp" style="flex:1;padding:8px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start">
+        <div style="color:#60a5fa;font-size:10px;font-weight:900;letter-spacing:.08em;opacity:.7">SpO₂</div>
+        <div style="display:flex;align-items:baseline;gap:2px">
+          <div id="pv-spo2" style="color:#60a5fa;font-size:clamp(22px,3.5vw,36px);font-weight:900;line-height:1">--</div>
+          <div style="color:rgba(96,165,250,.4);font-size:10px;font-weight:700">%</div>
+        </div>
+      </div>
+
+      <!-- Temp（最下段） -->
+      <div class="vp" style="flex:1;padding:8px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start">
+        <div style="color:#fb923c;font-size:10px;font-weight:900;letter-spacing:.08em;opacity:.7">Temp</div>
+        <div style="display:flex;align-items:baseline;gap:2px">
+          <div id="pv-temp" style="color:#fb923c;font-size:clamp(18px,2.8vw,28px);font-weight:900;line-height:1">--</div>
+          <div style="color:rgba(251,146,60,.4);font-size:10px;font-weight:700">°C</div>
+        </div>
+      </div>
+
     </div>
     <!-- ECG（右） -->
     <div style="flex:1;position:relative;min-width:0" id="ecg-area">
@@ -316,10 +338,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
           <div style="color:rgba(0,255,65,.45);font-size:10px;font-weight:700">Lead II</div>
           <div id="ecg-rhy-lbl" style="color:rgba(0,255,65,.2);font-size:8px;text-transform:uppercase">SR SIGNAL</div>
         </div>
-        <div class="ecg-rr" id="ecg-rr-wrap" style="display:none">
-          <div style="color:rgba(0,200,255,.35);font-size:8px;font-weight:800;text-transform:uppercase">RR</div>
-          <div id="pv-rr" style="color:rgba(0,200,255,.65);font-size:16px;font-weight:900">-- /min</div>
-        </div>
+        <!-- RRは左列に移動済み -->
       </div>
     </div>
   </div>
@@ -844,7 +863,6 @@ function applyPartState(s,prev){
     // 待機表示を隠す、ラベルを表示
     const sb=$('ecg-standby'); if(sb) sb.style.display='none';
     const lw=$('ecg-label-wrap'); if(lw) lw.style.display='';
-    const rw=$('ecg-rr-wrap'); if(rw) rw.style.display='';
   } else {
     // 待機中：すべて「--」
     $('pv-hr').textContent  = '--';
@@ -854,7 +872,6 @@ function applyPartState(s,prev){
     $('pv-rr').textContent  = '-- /min';
     const sb=$('ecg-standby'); if(sb) sb.style.display='flex';
     const lw=$('ecg-label-wrap'); if(lw) lw.style.display='none';
-    const rw=$('ecg-rr-wrap'); if(rw) rw.style.display='none';
   }
   // ECG params
   ecgBpm=parseInt(v.hr)||72; ecgRhythm=v.rhythmType||'SR'; ecgSweep=v.sweepSpeed||160;
