@@ -80,7 +80,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 .spd-btn{flex:1;padding:9px 6px;border-radius:10px;font-size:11px;font-weight:800;background:var(--s2);color:var(--t2);border:2px solid transparent;cursor:pointer;transition:all .15s}
 .spd-btn.on{background:#eff6ff;border-color:var(--blue);color:var(--blue)}
 /* ECG / Participant */
-#G-part{height:100dvh;height:-webkit-fill-available;background:var(--bg);color:#fff;display:flex;flex-direction:column;overflow:hidden;padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom));position:relative}
+#G-part{height:100dvh;height:-webkit-fill-available;background:var(--bg);color:#fff;display:flex;flex-direction:column;overflow:hidden;padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
 .vp{background:#000;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .vl{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.45;margin-bottom:3px}
 .vv{font-size:clamp(28px,5vw,58px);font-weight:900;line-height:1}
@@ -275,53 +275,54 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
     <button onclick="exitAndLogout()" style="background:none;color:rgba(255,255,255,.22);font-size:10px;font-weight:900;letter-spacing:.12em;padding:5px 10px;border:1px solid rgba(255,255,255,.07);border-radius:999px">退室</button>
   </nav>
 
-  <!-- メインエリア: バイタル（左）＋ECG（右）-->
-  <div id="part-top" style="display:flex;gap:10px;flex-shrink:0;flex:1;min-height:0;transition:flex .4s">
+  <!-- メインエリア: バイタル（左）＋ECG/所見（右）常時並列 -->
+  <div id="part-top" style="display:flex;gap:8px;flex:1;min-height:0">
 
-    <!-- バイタル数値（左列・大きく） -->
-    <div id="pv-wrap" style="width:200px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;height:100%;transition:width .4s,opacity .4s">
+    <!-- バイタル数値（左列・常時表示） -->
+    <div id="pv-wrap" style="width:190px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;height:100%;transition:width .3s">
 
-      <div style="flex:1;background:#1a0808;border-left:5px solid #ff4444;border-radius:12px;padding:10px 16px;display:flex;flex-direction:column;justify-content:center">
-        <div style="color:#ff7777;font-size:13px;font-weight:900;letter-spacing:.15em;margin-bottom:4px">HR</div>
-        <div style="display:flex;align-items:baseline;gap:5px">
-          <span id="pv-hr" style="color:#ff3333;font-size:52px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
-          <span style="color:rgba(255,68,68,.45);font-size:13px;font-weight:700">/min</span>
-        </div>
-      </div>
-
-      <div style="flex:1;background:#001820;border-left:5px solid #00c8ff;border-radius:12px;padding:10px 16px;display:flex;flex-direction:column;justify-content:center">
-        <div style="color:#44d8ff;font-size:13px;font-weight:900;letter-spacing:.15em;margin-bottom:4px">RR</div>
-        <div style="display:flex;align-items:baseline;gap:5px">
-          <span id="pv-rr" style="color:#00c8ff;font-size:42px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
-          <span style="color:rgba(0,200,255,.4);font-size:13px;font-weight:700">/min</span>
-        </div>
-      </div>
-
-      <div style="flex:1;background:#001a08;border-left:5px solid #4ade80;border-radius:12px;padding:10px 16px;display:flex;flex-direction:column;justify-content:center">
-        <div style="color:#6ee89a;font-size:13px;font-weight:900;letter-spacing:.15em;margin-bottom:4px">BP</div>
-        <span id="pv-bp" style="color:#4ade80;font-size:36px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--/--</span>
-      </div>
-
-      <div style="flex:1;background:#04081e;border-left:5px solid #60a5fa;border-radius:12px;padding:10px 16px;display:flex;flex-direction:column;justify-content:center">
-        <div style="color:#80b8fc;font-size:13px;font-weight:900;letter-spacing:.15em;margin-bottom:4px">SpO₂</div>
+      <div style="flex:1;background:#1a0808;border-left:5px solid #ff4444;border-radius:12px;padding:8px 14px;display:flex;flex-direction:column;justify-content:center">
+        <div style="color:#ff7777;font-size:12px;font-weight:900;letter-spacing:.12em;margin-bottom:3px">HR</div>
         <div style="display:flex;align-items:baseline;gap:4px">
-          <span id="pv-spo2" style="color:#60a5fa;font-size:42px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
-          <span style="color:rgba(96,165,250,.45);font-size:13px;font-weight:700">%</span>
+          <span id="pv-hr" style="color:#ff3333;font-size:clamp(28px,5vh,52px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(255,68,68,.4);font-size:11px;font-weight:700">/min</span>
         </div>
       </div>
 
-      <div style="flex:1;background:#1a0c00;border-left:5px solid #fb923c;border-radius:12px;padding:10px 16px;display:flex;flex-direction:column;justify-content:center">
-        <div style="color:#fcaa64;font-size:13px;font-weight:900;letter-spacing:.15em;margin-bottom:4px">Temp</div>
+      <div style="flex:1;background:#001820;border-left:5px solid #00c8ff;border-radius:12px;padding:8px 14px;display:flex;flex-direction:column;justify-content:center">
+        <div style="color:#44d8ff;font-size:12px;font-weight:900;letter-spacing:.12em;margin-bottom:3px">RR</div>
         <div style="display:flex;align-items:baseline;gap:4px">
-          <span id="pv-temp" style="color:#fb923c;font-size:36px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
-          <span style="color:rgba(251,146,60,.45);font-size:13px;font-weight:700">°C</span>
+          <span id="pv-rr" style="color:#00c8ff;font-size:clamp(22px,4vh,40px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(0,200,255,.4);font-size:11px;font-weight:700">/min</span>
+        </div>
+      </div>
+
+      <div style="flex:1;background:#001a08;border-left:5px solid #4ade80;border-radius:12px;padding:8px 14px;display:flex;flex-direction:column;justify-content:center">
+        <div style="color:#6ee89a;font-size:12px;font-weight:900;letter-spacing:.12em;margin-bottom:3px">BP</div>
+        <span id="pv-bp" style="color:#4ade80;font-size:clamp(18px,3vh,34px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--/--</span>
+      </div>
+
+      <div style="flex:1;background:#04081e;border-left:5px solid #60a5fa;border-radius:12px;padding:8px 14px;display:flex;flex-direction:column;justify-content:center">
+        <div style="color:#80b8fc;font-size:12px;font-weight:900;letter-spacing:.12em;margin-bottom:3px">SpO₂</div>
+        <div style="display:flex;align-items:baseline;gap:3px">
+          <span id="pv-spo2" style="color:#60a5fa;font-size:clamp(22px,4vh,40px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(96,165,250,.4);font-size:11px;font-weight:700">%</span>
+        </div>
+      </div>
+
+      <div style="flex:1;background:#1a0c00;border-left:5px solid #fb923c;border-radius:12px;padding:8px 14px;display:flex;flex-direction:column;justify-content:center">
+        <div style="color:#fcaa64;font-size:12px;font-weight:900;letter-spacing:.12em;margin-bottom:3px">Temp</div>
+        <div style="display:flex;align-items:baseline;gap:3px">
+          <span id="pv-temp" style="color:#fb923c;font-size:clamp(18px,3vh,34px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
+          <span style="color:rgba(251,146,60,.4);font-size:11px;font-weight:700">°C</span>
         </div>
       </div>
 
     </div>
 
-    <!-- ECG（右） -->
-    <div style="flex:1;position:relative;min-width:0;transition:flex .4s" id="ecg-area">
+    <!-- 右エリア: ECG（平常時）または所見（表示時）-->
+    <div style="flex:1;position:relative;min-width:0" id="ecg-area">
+      <!-- ECG -->
       <div class="ecg-wrap hf">
         <div class="ecg-grid-bg"></div>
         <canvas id="ecg-canvas"></canvas>
@@ -335,42 +336,15 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
           <div id="ecg-rhy-lbl" style="color:rgba(0,255,65,.2);font-size:8px;text-transform:uppercase">SR SIGNAL</div>
         </div>
       </div>
-    </div>
-
-  </div>
-
-  <!-- 所見オーバーレイ: 表示時はバイタルを縮小して前面に大きく -->
-  <div id="fo" style="display:none;position:absolute;inset:40px 0 0 0;z-index:30;padding:8px">
-    <div style="display:flex;gap:0;height:100%">
-      <!-- バイタル縮小列（所見表示中） -->
-      <div id="fo-vitals-mini" style="width:80px;flex-shrink:0;display:flex;flex-direction:column;gap:4px;height:100%;padding-right:6px">
-        <div style="flex:1;background:#1a0808;border-left:3px solid #ff4444;border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;justify-content:center">
-          <div style="color:#ff7777;font-size:9px;font-weight:900">HR</div>
-          <span id="fv-hr" style="color:#ff3333;font-size:22px;font-weight:900;line-height:1">--</span>
-        </div>
-        <div style="flex:1;background:#001820;border-left:3px solid #00c8ff;border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;justify-content:center">
-          <div style="color:#44d8ff;font-size:9px;font-weight:900">RR</div>
-          <span id="fv-rr" style="color:#00c8ff;font-size:18px;font-weight:900;line-height:1">--</span>
-        </div>
-        <div style="flex:1;background:#001a08;border-left:3px solid #4ade80;border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;justify-content:center">
-          <div style="color:#6ee89a;font-size:9px;font-weight:900">BP</div>
-          <span id="fv-bp" style="color:#4ade80;font-size:14px;font-weight:900;line-height:1">--/--</span>
-        </div>
-        <div style="flex:1;background:#04081e;border-left:3px solid #60a5fa;border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;justify-content:center">
-          <div style="color:#80b8fc;font-size:9px;font-weight:900">SpO₂</div>
-          <span id="fv-spo2" style="color:#60a5fa;font-size:18px;font-weight:900;line-height:1">--</span>
-        </div>
-        <div style="flex:1;background:#1a0c00;border-left:3px solid #fb923c;border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;justify-content:center">
-          <div style="color:#fcaa64;font-size:9px;font-weight:900">Temp</div>
-          <span id="fv-temp" style="color:#fb923c;font-size:14px;font-weight:900;line-height:1">--°C</span>
-        </div>
+      <!-- 所見オーバーレイ（ECGの上に重ねる） -->
+      <div id="fo" style="display:none;position:absolute;inset:0;z-index:10">
+        <div id="fo-inner" style="display:flex;flex-direction:row;gap:8px;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;align-items:stretch;justify-content:center"></div>
       </div>
-      <!-- 所見カード（メイン） -->
-      <div id="fo-inner" style="flex:1;display:flex;flex-direction:row;gap:8px;height:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;align-items:stretch;justify-content:center"></div>
     </div>
+
   </div>
 
-  <!-- Metro pill -->
+    <!-- Metro pill -->
   <div id="metro-pill" style="display:none" class="metro-pill">
     <div class="metro-dot" id="metro-dot"></div>
     <div><div style="font-size:9px;font-weight:900;color:rgba(224,53,53,.8);text-transform:uppercase">Metronome</div><div id="metro-bpm-pill" style="font-size:13px;font-weight:900">-- BPM</div></div>
@@ -942,7 +916,13 @@ function renderFO(s){
   const hasAbcde = ab.activeKey && ab[ab.activeKey];
   const fo=$('fo'), inner=$('fo-inner');
   if(!fo||!inner) return;
-  if(!active.length&&!hasSpeech&&!hasAbcde){ fo.style.display='none'; _lastFOKey=''; return; }
+  const pvWrap = document.getElementById('pv-wrap');
+  if(!active.length&&!hasSpeech&&!hasAbcde){
+    fo.style.display='none'; _lastFOKey='';
+    if(pvWrap) pvWrap.style.width=''; // 元のサイズに戻す
+    return;
+  }
+  if(pvWrap) pvWrap.style.width='120px'; // 所見表示中は縮小
 
   // 内容が変わっていなければ再描画しない（画像の点滅防止）
   const foKey = JSON.stringify({
@@ -951,7 +931,7 @@ function renderFO(s){
     abcdeKey:ab.activeKey||'',
     abcdeVal:ab.activeKey?ab[ab.activeKey]||'':''
   });
-  if(foKey===_lastFOKey){ fo.style.display='block'; return; }
+  if(foKey===_lastFOKey){ fo.style.display='flex'; return; }
   _lastFOKey=foKey;
 
   fo.style.display='flex'; inner.innerHTML='';
@@ -1003,7 +983,7 @@ function _resizeFOCards(inner){
   const cards = Array.from(inner.children);
   const n = cards.length;
   if(n===0) return;
-  const avail = inner.offsetWidth || (window.innerWidth - 20);
+  const avail = inner.offsetWidth || (inner.parentElement?.offsetWidth) || (window.innerWidth - 200);
   const gap = 10;
 
   if(n===1){
