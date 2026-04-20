@@ -1342,10 +1342,10 @@ function vitalRowsHTML(){
       +";display:flex;align-items:center;justify-content:center";
     var val=esc(LV[k]||"");
     var op=vis?"1":".4";
-    var inp='<input class="ifield" value="'+val+'" oninput="LV[\''+k+'\']=this.value" placeholder="--"'
+    var inp='<input class="ifield" value="'+val+'" oninput="LV[&apos;'+k+'&apos;]=this.value" placeholder="--"'
       +' style="flex:1;font-size:20px;font-weight:900;padding:8px 10px;opacity:'+op+'">';
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--b0)">'
-      +'<button onclick="toggleVV(\''+vk+'\')" style="'+bStyle+'">'+icon+'</button>'
+      +'<button onclick="toggleVV(&apos;'+vk+'&apos;)" style="'+bStyle+'">'+icon+'</button>'
       +'<div style="width:64px;flex-shrink:0">'
       +'<div style="font-size:10px;font-weight:900;color:'+( vis?color:"var(--t3)" )+';margin-bottom:1px">'+l+'</div>'
       +'<div style="font-size:9px;color:var(--t3)">'+unit+'</div>'
