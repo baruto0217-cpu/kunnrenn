@@ -814,10 +814,12 @@ function applySession(data){
     if(data.vitals!=null) SS.vitals=typeof data.vitals==='string'?JSON.parse(data.vitals):data.vitals;
     if(data.show_vitals!=null) SS.showVitals=data.show_vitals;
     if(data.show_ecg!=null) SS.showEcg=data.show_ecg;
-    if(data.vital_visibility!=null && typeof data.vital_visibility==='object'){
-      SS.vitalVisibility=data.vital_visibility;
-    } else if(typeof data.vital_visibility==='string' && data.vital_visibility){
-      try{ SS.vitalVisibility=JSON.parse(data.vital_visibility); }catch(e){}
+    if(!_pushingVV){ // push 進行中は上書きしない
+      if(data.vital_visibility!=null && typeof data.vital_visibility==='object'){
+        SS.vitalVisibility=data.vital_visibility;
+      } else if(typeof data.vital_visibility==='string' && data.vital_visibility){
+        try{ SS.vitalVisibility=JSON.parse(data.vital_visibility); }catch(e){}
+      }
     }
     if(data.abcde!=null){
       SS.abcde=typeof data.abcde==='string'?JSON.parse(data.abcde):data.abcde;
@@ -837,6 +839,8 @@ function applySession(data){
   // 想定者側もメイン再描画してON/OFFボタンを更新
   if(role==='instructor' && activeTab==='Init') renderMain();
 }
+
+let _pushingVV = false; // vital_visibility の push 進行中フラグ
 
 async function pushSession(updates){
   Object.assign(SS,updates);
@@ -1541,18 +1545,20 @@ function setLV(k,v){
   }
   renderMain();
 }
-function toggleEcg(){
+async function toggleEcg(){
   SS.showEcg = SS.showEcg === false ? true : false;
-  pushSession({show_ecg: SS.showEcg});
   renderMain();
+  await pushSession({show_ecg: SS.showEcg});
 }
 
-function toggleVV(key){
+async function toggleVV(key){
   const vv = {...(SS.vitalVisibility||{hr:true,rr:true,bp:true,spo2:true,temp:true})};
   vv[key] = !vv[key];
   SS.vitalVisibility = vv;
-  pushSession({vital_visibility: vv}); // 即座に保存
-  renderMain();
+  renderMain(); // 先にUIを更新
+  _pushingVV = true;
+  await pushSession({vital_visibility: vv});
+  _pushingVV = false;
 }
 
 async function hideVitals(){
