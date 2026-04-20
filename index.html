@@ -1603,6 +1603,35 @@ function initHTML(){
       <span style="font-size:18px">+</span> 観察所見を追加
     </button>` : '';
 
+  // 所見をグループ別に分類
+  const groups = ['afterA','afterB','afterC','afterD','afterE'];
+  const grouped = {};
+  groups.forEach(g=>{ grouped[g]=[]; });
+  initList.forEach(f=>{ const g=f.initGroup||'afterC'; (grouped[g]=grouped[g]||[]).push(f); });
+
+  // グループの所見カードHTML
+  const groupCards = (g) => {
+    const list=grouped[g]||[];
+    const cards=list.map((f,i)=>`<div style="position:relative">
+      ${editMode?`<div style="position:absolute;top:4px;right:4px;display:flex;gap:2px;z-index:2;background:rgba(255,255,255,.9);border-radius:6px;padding:2px">
+        ${i>0?`<button onclick="moveInitF('${f.id}',-1,'${g}')" style="background:none;color:var(--t3);font-size:13px;padding:2px 5px;border-radius:4px">↑</button>`:''}
+        ${i<list.length-1?`<button onclick="moveInitF('${f.id}',1,'${g}')" style="background:none;color:var(--t3);font-size:13px;padding:2px 5px;border-radius:4px">↓</button>`:''}
+      </div>`:''}
+      ${fcHTML(f,'Init')}
+    </div>`).join('');
+    const addBtn=editMode?`<button onclick="openFindingFormInit('${g}')"
+      style="width:100%;border:2px dashed var(--b1);background:transparent;border-radius:12px;padding:10px;color:var(--t3);display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;font-size:11px;font-weight:900;margin-top:6px"
+      onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'"
+      onmouseout="this.style.borderColor='var(--b1)';this.style.color='var(--t3)'">
+      <span style="font-size:14px">+</span> 所見を追加
+    </button>`:'';
+    if(!list.length && !editMode) return '';
+    return `<div style="margin:6px 0 10px;${list.length?'':''}">
+      ${list.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">${cards}</div>`:''}
+      ${addBtn}
+    </div>`;
+  };
+
   return `<div style="max-width:680px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <h2 style="font-size:16px;font-weight:900">🗣️ 口頭付与 / 観察所見</h2>
@@ -1610,24 +1639,59 @@ function initHTML(){
     </div>
 
     ${abcCard('A','A — 気道 (Airway)','例: 開通・呼名反応あり / 喘鳴あり')}
+    ${groupCards('afterA')}
+
     ${abcCard('B','B — 呼吸 (Breathing)','例: 胸郭挙上あり・左右差なし / SpO₂ 92%')}
+    ${groupCards('afterB')}
+
     ${abcCard('C','C — 循環 (Circulation)','例: 橈骨動脈触知可・冷汗あり / CRT 3秒')}
+    ${groupCards('afterC')}
 
-    <!-- 観察所見（CとDの間）-->
-    ${findingCards}
-    ${addFindingBtn}
-
-    <!-- メトロノーム（観察所見の後）-->
+    <!-- メトロノーム（CとDの間）-->
     ${metroCard}
 
     ${abcCard('D','D — 意識 (Disability)','例: GCS E2V3M4 / 瞳孔 3mm 対光反射(+)')}
+    ${groupCards('afterD')}
+
     ${abcCard('E','E — 体温・外表 (Exposure)','例: 体温 38.5°C / 右前腕に擦過傷')}
+    ${groupCards('afterE')}
 
   </div>`;
 }
 /* ====================================================
    ABCDE 口頭付与
    ==================================================== */
+// Init タブ用: グループ指定で所見フォームを開く
+function openFindingFormInit(group){
+  ftab='Init';
+  fform={id:'',type:'image',label:'',url:'',description:'',initGroup:group};
+  $('fm-label').value=''; $('fm-desc').value='';
+  $('fm-title').textContent='所見の登録';
+  $('fm-save').textContent='保存する';
+  setFT('image');
+  const ua=$('fm-upload');
+  ua.textContent='📁 ファイルをアップロード'; ua.className='upa';
+  $('fm-file').value='';
+  show('M-finding');
+}
+
+// Init タブ内のグループ内での並び替え
+async function moveInitF(id, dir, group){
+  const fs=pf(curCase);
+  const list=(fs['Init']||[]);
+  // グループ内インデックスで並び替え
+  const grpList=list.filter(f=>(f.initGroup||'afterC')===group);
+  const idx=grpList.findIndex(f=>f.id===id);
+  const newIdx=idx+dir;
+  if(idx<0||newIdx<0||newIdx>=grpList.length) return;
+  // リスト全体でスワップ
+  const idxA=list.findIndex(f=>f.id===grpList[idx].id);
+  const idxB=list.findIndex(f=>f.id===grpList[newIdx].id);
+  [list[idxA],list[idxB]]=[list[idxB],list[idxA]];
+  fs['Init']=list;
+  await writeFindings(fs);
+}
+
 function updateAbcde(key, val){
   SS.abcde = {...(SS.abcde||{}), [key]: val};
   pushSession({ abcde: SS.abcde });
@@ -1933,7 +1997,7 @@ function compImg(b64){ return new Promise(res=>{
   const img=new Image(); img.src=b64;
   img.onload=()=>{
     const c=document.createElement('canvas'); let w=img.width,h=img.height;
-    const M=800; if(w>h){ if(w>M){ h*=M/w; w=M; } }else{ if(h>M){ w*=M/h; h=M; } }
+    const M=1200; if(w>h){ if(w>M){ h*=M/w; w=M; } }else{ if(h>M){ w*=M/h; h=M; } }
     c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
     res(c.toDataURL('image/jpeg',.7));
   };
@@ -1943,12 +2007,15 @@ async function saveFinding(){
   fform.label=$('fm-label').value.trim();
   fform.description=$('fm-desc').value.trim();
   if(!fform.label){ alert('タイトルを入力してください'); return; }
+  if(fform.type==='image' && !fform.url){ alert('画像をアップロードしてください'); return; }
   const fs=pf(curCase);
   if(!fs[ftab]) fs[ftab]=[];
   if(fform.id){
     fs[ftab]=fs[ftab].map(x=>x.id===fform.id?{...fform}:x);
   }else{
-    fs[ftab].push({...fform,id:''+Date.now(),side:bodySide});
+    const newF={...fform,id:''+Date.now(),side:bodySide};
+    if(ftab==='Init' && !newF.initGroup) newF.initGroup='afterC';
+    fs[ftab].push(newF);
   }
   await writeFindings(fs);
   closeModal('M-finding');
