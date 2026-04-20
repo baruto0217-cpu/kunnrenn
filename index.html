@@ -500,6 +500,7 @@ let SS = { // session state
   metronome:{on:false,bpm:100,isIrregular:false},
   vitals:{bpSys:'--',bpDia:'--',hr:'72',rr:'--',spo2:'--',temp:'--',rhythmType:'SR',sweepSpeed:160},
   showVitals:false,
+  showEcg:true,
   vitalVisibility:{hr:true,rr:true,bp:true,spo2:true,temp:true}, // 個別表示設定
   abcde:{ A:'', B:'', C:'', D:'', E:'', activeKey:null }  // ABCDE口頭付与
 };
@@ -810,6 +811,7 @@ function applySession(data){
     if(data.metronome!=null) SS.metronome=typeof data.metronome==='string'?JSON.parse(data.metronome):data.metronome;
     if(data.vitals!=null) SS.vitals=typeof data.vitals==='string'?JSON.parse(data.vitals):data.vitals;
     if(data.show_vitals!=null) SS.showVitals=data.show_vitals;
+    if(data.show_ecg!=null) SS.showEcg=data.show_ecg;
     if(data.vital_visibility!=null && typeof data.vital_visibility==='object'){
       SS.vitalVisibility=data.vital_visibility;
     } else if(typeof data.vital_visibility==='string' && data.vital_visibility){
@@ -850,6 +852,7 @@ async function pushSession(updates){
     metronome:SS.metronome,
     vitals:SS.vitals,
     show_vitals:SS.showVitals,
+    show_ecg:SS.showEcg,
     vital_visibility:SS.vitalVisibility,
     abcde:SS.abcde,
     updated_at:new Date().toISOString()
@@ -927,9 +930,15 @@ function applyPartState(s,prev){
   }
   // ECG params
   ecgBpm=parseInt(v.hr)||72; ecgRhythm=v.rhythmType||'SR'; ecgSweep=v.sweepSpeed||160;
-  // showVitals が初めてtrueになったらECG開始
-  if(s.showVitals && !ecgRaf){ startECG(); }
-  else if(!s.showVitals){ stopECG(); }
+  // ECG表示制御: showVitals=true かつ showEcg=true のときのみ描画
+  const ecgOn = s.showVitals && (s.showEcg !== false);
+  const ecgArea = document.getElementById('ecg-area');
+  if(ecgArea){
+    ecgArea.style.opacity = ecgOn ? '1' : '0';
+    ecgArea.style.pointerEvents = ecgOn ? '' : 'none';
+  }
+  if(ecgOn && !ecgRaf){ startECG(); }
+  else if(!ecgOn){ stopECG(); }
   // findings overlay
   renderFO(s);
   // metronome pill
@@ -1336,6 +1345,22 @@ function vitalRowsHTML(){
     {k:"rr",    vk:"rr",   l:"呼吸数",  unit:"/分",  color:"#00c8ff"},
     {k:"temp",  vk:"temp", l:"体温",    unit:"°C",   color:"#fb923c"}
   ];
+  var ecgVis = SS.showEcg !== false;
+  var ecgIcon = ecgVis ? "📈" : "📉";
+  var ecgBtnStyle = "padding:6px 14px;border-radius:20px;font-size:12px;font-weight:900;"
+    + (ecgVis
+      ? "border:2px solid #6366f1;background:#6366f1;color:#fff"
+      : "border:2px solid var(--b1);background:var(--s2);color:var(--t2)");
+  var ecgRow = '<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-top:2px solid var(--b0);margin-top:4px">'
+    + '<div style="width:32px;height:32px;border-radius:8px;font-size:18px;display:flex;align-items:center;justify-content:center;color:#6366f1;flex-shrink:0">〜</div>'
+    + '<div style="width:64px;flex-shrink:0">'
+    + '<div style="font-size:10px;font-weight:900;color:'+(ecgVis?'#6366f1':'var(--t3)')+';margin-bottom:1px">心電図</div>'
+    + '<div style="font-size:9px;color:var(--t3)">ECG波形</div>'
+    + '</div>'
+    + '<button onclick="toggleEcg()" style="'+ecgBtnStyle+'">'
+    + (ecgVis ? '📈 表示中（タップで非表示）' : '📉 非表示（タップで表示）')
+    + '</button></div>';
+
   return rows.map(function(row){
     var k=row.k,vk=row.vk,l=row.l,unit=row.unit,color=row.color;
     var vis=vv[vk]!==false;
@@ -1354,7 +1379,7 @@ function vitalRowsHTML(){
       +'<div style="font-size:10px;font-weight:900;color:'+( vis?color:"var(--t3)" )+';margin-bottom:1px">'+l+'</div>'
       +'<div style="font-size:9px;color:var(--t3)">'+unit+'</div>'
       +'</div>'+inp+'</div>';
-  }).join("");
+  }).join("") + ecgRow;
 }
 
 function vitalHTML(){
@@ -1512,6 +1537,12 @@ function setLV(k,v){
   }
   renderMain();
 }
+function toggleEcg(){
+  SS.showEcg = SS.showEcg === false ? true : false;
+  pushSession({show_ecg: SS.showEcg});
+  renderMain();
+}
+
 function toggleVV(key){
   const vv = {...(SS.vitalVisibility||{hr:true,rr:true,bp:true,spo2:true,temp:true})};
   vv[key] = !vv[key];
@@ -1522,7 +1553,18 @@ function toggleVV(key){
 
 async function hideVitals(){
   const nowShowing = SS.showVitals;
-  await pushSession({ showVitals: !nowShowing });
+  // 全非表示: 個別visibility も全て false / 全表示: 全て true
+  const newShowVitals = !nowShowing;
+  if(!newShowVitals){
+    // 全非表示: 個別も全てoff、ECGもoff
+    SS.vitalVisibility = {hr:false,rr:false,bp:false,spo2:false,temp:false};
+    SS.showEcg = false;
+  } else {
+    // 全表示: 個別も全てon、ECGもon
+    SS.vitalVisibility = {hr:true,rr:true,bp:true,spo2:true,temp:true};
+    SS.showEcg = true;
+  }
+  await pushSession({ showVitals: newShowVitals, vital_visibility: SS.vitalVisibility, show_ecg: SS.showEcg });
   // ナビバー更新
   const indicator = $('vital-indicator');
   if(indicator){
