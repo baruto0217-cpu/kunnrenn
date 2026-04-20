@@ -365,11 +365,13 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
         </div>
       </div>
       <!-- 所見オーバーレイ（ECGの上に重ねる） -->
-      <div id="fo" style="display:none;position:absolute;inset:0;z-index:10;flex-direction:column">
-        <div id="fo-inner" style="display:flex;flex-direction:row;gap:6px;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;align-items:stretch;justify-content:center;background:rgba(0,0,0,.92);padding:6px;flex:1"></div>
-      </div>
     </div>
 
+  </div>
+
+  <!-- 所見オーバーレイ: part-top と同じ位置に重なる（pv-wrapを避けて右側に） -->
+  <div id="fo" style="display:none;position:absolute;top:28px;left:0;right:0;bottom:0;z-index:20;pointer-events:none">
+    <div id="fo-inner" style="display:flex;flex-direction:row;gap:6px;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;align-items:stretch;justify-content:center;padding:6px;pointer-events:all"></div>
   </div>
 
     <!-- Metro pill -->
@@ -932,11 +934,13 @@ function applyPartState(s,prev){
   ecgBpm=parseInt(v.hr)||72; ecgRhythm=v.rhythmType||'SR'; ecgSweep=v.sweepSpeed||160;
   // ECG表示制御: showVitals=true かつ showEcg=true のときのみ描画
   const ecgOn = s.showVitals && (s.showEcg !== false);
-  const ecgArea = document.getElementById('ecg-area');
-  if(ecgArea){
-    ecgArea.style.opacity = ecgOn ? '1' : '0';
-    ecgArea.style.pointerEvents = ecgOn ? '' : 'none';
-  }
+  // ECGエリアの表示制御（キャンバスと背景のみ）
+  const ecgCanvas = document.getElementById('ecg-canvas');
+  const ecgWrap   = document.querySelector('.ecg-wrap');
+  if(ecgCanvas) ecgCanvas.style.opacity = ecgOn ? '1' : '0';
+  if(ecgWrap)   ecgWrap.style.background = '#000';
+  const ecgStandby = document.getElementById('ecg-standby');
+  if(ecgStandby) ecgStandby.style.display = (!s.showVitals || !ecgOn) ? 'flex' : 'none';
   if(ecgOn && !ecgRaf){ startECG(); }
   else if(!ecgOn){ stopECG(); }
   // findings overlay
