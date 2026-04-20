@@ -365,8 +365,8 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
         </div>
       </div>
       <!-- 所見オーバーレイ（ECGの上に重ねる） -->
-      <div id="fo" style="display:none;position:absolute;inset:0;z-index:10">
-        <div id="fo-inner" style="display:flex;flex-direction:row;gap:6px;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;align-items:stretch;justify-content:center;background:#000;padding:6px"></div>
+      <div id="fo" style="display:none;position:absolute;inset:0;z-index:10;flex-direction:column">
+        <div id="fo-inner" style="display:flex;flex-direction:row;gap:6px;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;align-items:stretch;justify-content:center;background:rgba(0,0,0,.92);padding:6px;flex:1"></div>
       </div>
     </div>
 
@@ -945,6 +945,7 @@ function applyPartState(s,prev){
 
 let _lastFOKey = '';
 function renderFO(s){
+  if(!curCase){ const fo=$('fo'); if(fo) fo.style.display='none'; return; }
   const all=[...pf(curCase).Pre||[],...pf(curCase).Init||[],...pf(curCase).Full||[]];
   const active=all.filter(f=>(s.activeFindingIds||[]).includes(f.id));
   const hasSpeech=!!s.isSpeakingText;
@@ -970,7 +971,9 @@ function renderFO(s){
   if(foKey===_lastFOKey){ fo.style.display='flex'; return; }
   _lastFOKey=foKey;
 
-  fo.style.display='flex'; inner.innerHTML='';
+  fo.style.display='flex';
+  fo.style.flexDirection='column'; // fo 自体は block的に
+  inner.innerHTML='';
   inner.style.flexDirection='row';
     active.forEach(f=>{
     const d=document.createElement('div');
@@ -1019,7 +1022,8 @@ function _resizeFOCards(inner){
   const cards = Array.from(inner.children);
   const n = cards.length;
   if(n===0) return;
-  const avail = inner.offsetWidth || (inner.parentElement?.offsetWidth) || (window.innerWidth - 200);
+  const foEl = document.getElementById("fo");
+  const avail = inner.offsetWidth || foEl?.offsetWidth || (window.innerWidth - 200);
   const gap = 10;
 
   if(n===1){
@@ -1278,12 +1282,11 @@ function renderMain(){
   const m=$('inst-main'); if(!m) return;
   if(activeTab==='Vital'){ m.innerHTML=vitalHTML(); return; }
   if(activeTab==='Init'){
-    // フォーカス中のABCDEテキストエリアがあれば再描画しない
     const focusedTA = document.activeElement;
     if(focusedTA && focusedTA.id && focusedTA.id.startsWith('abcde-ta-')){
-      return; // 入力中は再描画しない
+      return;
     }
-    m.innerHTML=initHTML()+findingsHTML('Init'); return;
+    m.innerHTML=initHTML(); return;
   }
   if(activeTab==='Pre'){ m.innerHTML=findingsHTML('Pre'); return; }
   if(activeTab==='Full'){
@@ -1533,66 +1536,92 @@ function initHTML(){
 
   const activeKey = ab.activeKey || null;
 
-  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start">
-
-    <!-- 左: ABCDE 口頭付与 -->
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="card" style="padding:20px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <h2 style="font-size:16px;font-weight:900">🗣️ 口頭付与内容</h2>
-          <button onclick="clearAbcde()" style="padding:6px 14px;border-radius:9px;font-size:11px;font-weight:900;background:var(--s2);color:var(--t2)">全消去</button>
+  // A/B/C と D/E に分割してメトロノームを間に挟む
+  const abcCard = (key, label, ph) => {
+    const val = ab[key]||'';
+    const isActive = activeKey===key;
+    return `<div style="margin-bottom:12px;background:${isActive?'#fff0f0':'var(--s1)'};border:2px solid ${isActive?'var(--red)':val?'var(--blue)':'var(--b0)'};border-radius:14px;padding:12px;transition:all .2s">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-size:13px;font-weight:900;background:${isActive?'var(--red)':val?'var(--blue)':'var(--s3)'};color:${isActive||val?'#fff':'var(--t3)'};flex-shrink:0">${key}</span>
+          <span style="font-size:13px;font-weight:800;color:${isActive?'var(--red)':'var(--t1)'}">${label}</span>
         </div>
-        ${items.map(({key,label,ph})=>{
-          const val = ab[key]||'';
-          const isActive = activeKey===key;
-          return `<div style="margin-bottom:12px;background:${isActive?'#fff0f0':'var(--s1)'};border:2px solid ${isActive?'var(--red)':val?'var(--blue)':'var(--b0)'};border-radius:14px;padding:12px;transition:all .2s">
-            <!-- ヘッダー行: ラベル＋表示ボタン -->
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-size:13px;font-weight:900;background:${isActive?'var(--red)':val?'var(--blue)':'var(--s3)'};color:${isActive||val?'#fff':'var(--t3)'};flex-shrink:0">${key}</span>
-                <span style="font-size:13px;font-weight:800;color:${isActive?'var(--red)':'var(--t1)'}">${label}</span>
-              </div>
-              <div style="display:flex;gap:6px;align-items:center">
-                ${val?`<button onclick="toggleAbcdeDisplay('${key}')"
-                  style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:900;border:2px solid ${isActive?'var(--red)':'var(--blue)'};background:${isActive?'var(--red)':'#fff'};color:${isActive?'#fff':'var(--blue)'};transition:all .2s;white-space:nowrap">
-                  ${isActive?'📢 表示中（タップで非表示）':'💬 実施者に表示'}
-                </button>`:''}
-                ${val?`<button onclick="updateAbcde('${key}','')" style="padding:6px 10px;border-radius:9px;font-size:12px;background:var(--s2);color:var(--t3)">✕</button>`:''}
-              </div>
-            </div>
-            <!-- テキストエリア -->
-            <textarea
-              id="abcde-ta-${key}"
-              oninput="abcdeLocal['${key}']=this.value"
-              onblur="updateAbcde('${key}',this.value)"
-              placeholder="${ph}"
-              style="width:100%;background:#fff;border:1.5px solid ${val?'var(--blue)':'var(--b1)'};border-radius:10px;padding:10px 12px;font-size:13px;color:var(--t0);resize:none;height:60px;font-family:inherit;line-height:1.5;outline:none;display:block">${esc(val)}</textarea>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
-
-    <!-- 右: メトロノーム -->
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="card" style="padding:20px">
-        <div class="flex ac jsb" style="margin-bottom:18px">
-          <div class="flex ac g3">
-            <div style="padding:9px;border-radius:11px;background:${m.on?'var(--red)':'var(--s2)'};font-size:20px">💓</div>
-            <h2 style="font-size:17px;font-weight:900">メトロノーム</h2>
-          </div>
-          <button onclick="toggleMetro()" style="padding:9px 22px;border-radius:999px;font-size:12px;font-weight:900;background:${m.on?'var(--red)':'var(--s2)'};color:${m.on?'#fff':'var(--t1)'}">${m.on?'ON（停止）':'OFF（開始）'}</button>
-        </div>
-        <div class="flex g3">
-          <div style="flex:1;background:var(--s2);border-radius:13px;padding:14px;border:2px solid var(--b0)">
-            <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;margin-bottom:3px">BPM</div>
-            <input type="number" value="${m.bpm}" style="width:100%;font-size:26px;font-weight:900;text-align:center;color:var(--t0)" oninput="setMetroBpm(this.value)">
-          </div>
-          <button onclick="toggleIrr()" class="irr${m.isIrregular?' on':''}">
-            <span style="font-size:20px">🔀</span><span style="font-size:11px">不整</span>
-          </button>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${val?`<button onclick="toggleAbcdeDisplay('${key}')" style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:900;border:2px solid ${isActive?'var(--red)':'var(--blue)'};background:${isActive?'var(--red)':'#fff'};color:${isActive?'#fff':'var(--blue)'};transition:all .2s;white-space:nowrap">${isActive?'📢 表示中（タップで非表示）':'💬 実施者に表示'}</button>`:''}
+          ${val?`<button onclick="updateAbcde('${key}','')" style="padding:6px 10px;border-radius:9px;font-size:12px;background:var(--s2);color:var(--t3)">✕</button>`:''}
         </div>
       </div>
+      <textarea id="abcde-ta-${key}" oninput="abcdeLocal['${key}']=this.value" onblur="updateAbcde('${key}',this.value)" placeholder="${ph}" style="width:100%;background:#fff;border:1.5px solid ${val?'var(--blue)':'var(--b1)'};border-radius:10px;padding:10px 12px;font-size:13px;color:var(--t0);resize:none;height:60px;font-family:inherit;line-height:1.5;outline:none;display:block">${esc(val)}</textarea>
+    </div>`;
+  };
+
+  const metroCard = `<div class="card" style="padding:16px;margin-bottom:12px;background:${m.on?'#fff8f0':'var(--s0)'};border:2px solid ${m.on?'var(--orange)':'var(--b0)'}">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="padding:8px;border-radius:10px;background:${m.on?'var(--red)':'var(--s2)'};font-size:18px">💓</div>
+        <div>
+          <div style="font-size:14px;font-weight:900">メトロノーム</div>
+          <div style="font-size:11px;color:var(--t3);font-weight:700">${m.on?'稼働中 — 実施者に音が出ます':'停止中'}</div>
+        </div>
+      </div>
+      <button onclick="toggleMetro()" style="padding:8px 20px;border-radius:999px;font-size:13px;font-weight:900;background:${m.on?'var(--red)':'var(--s2)'};color:${m.on?'#fff':'var(--t1)'}">${m.on?'停止':'開始'}</button>
     </div>
+    ${m.on?`<div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+      <div style="flex:1;background:var(--s2);border-radius:11px;padding:10px 14px;border:1.5px solid var(--b0)">
+        <div style="font-size:9px;font-weight:900;color:var(--t3);text-transform:uppercase;margin-bottom:2px">BPM</div>
+        <input type="number" value="${m.bpm}" style="width:100%;font-size:22px;font-weight:900;text-align:center;color:var(--t0);background:none" oninput="setMetroBpm(this.value)">
+      </div>
+      <button onclick="toggleIrr()" class="irr${m.isIrregular?' on':''}">
+        <span style="font-size:18px">🔀</span><span style="font-size:10px">不整</span>
+      </button>
+    </div>`:''}
+  </div>`;
+
+  // 所見カードHTMLを生成
+  const findings=pf(curCase);
+  const initList=(findings['Init']||[]);
+  const moveBtn=(id,dir)=>editMode?`<button onclick="moveF('${id}','Init',${dir})" style="background:none;color:var(--t3);font-size:13px;padding:2px 6px;border-radius:4px">${dir<0?'↑':'↓'}</button>`:'';
+  const findingCards = initList.length>0 ? `
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">📋 観察所見</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+        ${initList.map((f,i)=>`<div style="position:relative">
+          ${editMode?`<div style="position:absolute;top:4px;right:4px;display:flex;gap:2px;z-index:2;background:rgba(255,255,255,.9);border-radius:6px;padding:2px">
+            ${i>0?moveBtn(f.id,-1):''}
+            ${i<initList.length-1?moveBtn(f.id,1):''}
+          </div>`:''}
+          ${fcHTML(f,'Init')}
+        </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  const addFindingBtn = editMode ? `
+    <button onclick="openFindingForm(null,'Init')"
+      style="width:100%;border:2px dashed var(--b1);background:transparent;border-radius:14px;padding:14px;color:var(--t3);display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:12px;font-weight:900;margin-bottom:14px"
+      onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
+      onmouseout="this.style.borderColor='var(--b1)';this.style.color='var(--t3)'">
+      <span style="font-size:18px">+</span> 観察所見を追加
+    </button>` : '';
+
+  return `<div style="max-width:680px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2 style="font-size:16px;font-weight:900">🗣️ 口頭付与 / 観察所見</h2>
+      <button onclick="clearAbcde()" style="padding:6px 14px;border-radius:9px;font-size:11px;font-weight:900;background:var(--s2);color:var(--t2)">全消去</button>
+    </div>
+
+    ${abcCard('A','A — 気道 (Airway)','例: 開通・呼名反応あり / 喘鳴あり')}
+    ${abcCard('B','B — 呼吸 (Breathing)','例: 胸郭挙上あり・左右差なし / SpO₂ 92%')}
+    ${abcCard('C','C — 循環 (Circulation)','例: 橈骨動脈触知可・冷汗あり / CRT 3秒')}
+
+    <!-- 観察所見（CとDの間）-->
+    ${findingCards}
+    ${addFindingBtn}
+
+    <!-- メトロノーム（観察所見の後）-->
+    ${metroCard}
+
+    ${abcCard('D','D — 意識 (Disability)','例: GCS E2V3M4 / 瞳孔 3mm 対光反射(+)')}
+    ${abcCard('E','E — 体温・外表 (Exposure)','例: 体温 38.5°C / 右前腕に擦過傷')}
 
   </div>`;
 }
@@ -1756,8 +1785,15 @@ function findingsHTML(tab){
   const findings=pf(curCase);
   let list=(findings[tab]||[]);
   if(tab==='Full'&&bodyPart) list=list.filter(f=>f.bodyPart===bodyPart&&(!f.side||f.side===bodySide));
+  const moveBtn=(id,dir,t)=>editMode?`<button onclick="moveF('${id}','${t}',${dir})" style="background:none;color:var(--t3);font-size:13px;padding:2px 4px;border-radius:4px;line-height:1">${dir<0?'↑':'↓'}</button>`:'';
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
-    ${list.map(f=>fcHTML(f,tab)).join('')}
+    ${list.map((f,i)=>`<div style="position:relative">
+      ${editMode?`<div style="position:absolute;top:6px;right:6px;display:flex;flex-direction:column;gap:2px;z-index:2">
+        ${i>0?moveBtn(f.id,-1,tab):''}
+        ${i<list.length-1?moveBtn(f.id,1,tab):''}
+      </div>`:''}
+      ${fcHTML(f,tab)}
+    </div>`).join('')}
     ${editMode?`<button onclick="openFindingForm(null,'${tab}')" 
       style="border:3px dashed var(--b1);background:transparent;border-radius:18px;padding:28px;color:var(--t3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;transition:all .2s;font-size:12px;font-weight:900"
       onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
@@ -1765,6 +1801,18 @@ function findingsHTML(tab){
       <span style="font-size:26px">+</span>新規所見追加
     </button>`:''}
   </div>`;
+}
+
+async function moveF(id, tab, dir){
+  const fs=pf(curCase);
+  const list=fs[tab]||[];
+  const idx=list.findIndex(f=>f.id===id);
+  if(idx<0) return;
+  const newIdx=idx+dir;
+  if(newIdx<0||newIdx>=list.length) return;
+  [list[idx],list[newIdx]]=[list[newIdx],list[idx]];
+  fs[tab]=list;
+  await writeFindings(fs);
 }
 
 function fcHTML(f,tab){
