@@ -500,6 +500,7 @@ let SS = { // session state
   metronome:{on:false,bpm:100,isIrregular:false},
   vitals:{bpSys:'--',bpDia:'--',hr:'72',rr:'--',spo2:'--',temp:'--',rhythmType:'SR',sweepSpeed:160},
   showVitals:false,
+  vitalVisibility:{hr:true,rr:true,bp:true,spo2:true,temp:true}, // 個別表示設定
   abcde:{ A:'', B:'', C:'', D:'', E:'', activeKey:null }  // ABCDE口頭付与
 };
 let LV = {bpSys:'',bpDia:'',hr:'72',rr:'',spo2:'',temp:'',rhythmType:'SR',sweepSpeed:160};
@@ -798,6 +799,7 @@ function applySession(data){
     if(data.metronome!=null) SS.metronome=typeof data.metronome==='string'?JSON.parse(data.metronome):data.metronome;
     if(data.vitals!=null) SS.vitals=typeof data.vitals==='string'?JSON.parse(data.vitals):data.vitals;
     if(data.show_vitals!=null) SS.showVitals=data.show_vitals;
+    if(data.vital_visibility!=null) SS.vitalVisibility=typeof data.vital_visibility==='string'?JSON.parse(data.vital_visibility):data.vital_visibility;
     if(data.abcde!=null){
       SS.abcde=typeof data.abcde==='string'?JSON.parse(data.abcde):data.abcde;
       // ローカルバッファも同期（フォーカス中でなければ）
@@ -833,6 +835,7 @@ async function pushSession(updates){
     metronome:SS.metronome,
     vitals:SS.vitals,
     show_vitals:SS.showVitals,
+    vital_visibility:SS.vitalVisibility,
     abcde:SS.abcde,
     updated_at:new Date().toISOString()
   };
@@ -886,11 +889,13 @@ function applyPartState(s,prev){
   const v=s.vitals||{};
   if(s.showVitals){
     // モニター表示中：実際の値を表示
-    $('pv-hr').textContent   = (v.hr&&v.hr!=='')?v.hr:'--';
-    $('pv-bp').textContent   = (v.bpSys||'--')+'/'+(v.bpDia||'--');
-    $('pv-spo2').textContent = v.spo2||'--';
-    $('pv-temp').textContent = (v.temp||'--')+'°C';
-    $('pv-rr').textContent   = (v.rr||'--')+' /min';
+    const vv = s.vitalVisibility||{hr:true,rr:true,bp:true,spo2:true,temp:true};
+    const vvShow = (el, val, show) => { if(!el) return; el.textContent=show?val:'－'; el.style.opacity=show?'1':'0.2'; };
+    vvShow($('pv-hr'),  (v.hr&&v.hr!=='')?v.hr:'--', vv.hr!==false);
+    vvShow($('pv-bp'),  (v.bpSys||'--')+'/'+(v.bpDia||'--'), vv.bp!==false);
+    vvShow($('pv-spo2'),v.spo2||'--', vv.spo2!==false);
+    vvShow($('pv-temp'),(v.temp||'--')+'°C', vv.temp!==false);
+    vvShow($('pv-rr'),  (v.rr||'--')+' /min', vv.rr!==false);
     const rl=$('ecg-rhy-lbl'); if(rl) rl.textContent=(v.rhythmType||'SR')+' SIGNAL';
     // 待機表示を隠す、ラベルを表示
     const sb=$('ecg-standby'); if(sb) sb.style.display='none';
@@ -1340,32 +1345,45 @@ function vitalHTML(){
 
       <!-- バイタル数値入力 -->
       <div class="card" style="padding:20px">
-        <h3 style="font-size:14px;font-weight:900;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">バイタルサイン</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-          ${[
-            {k:'hr',    l:'HR (bpm)',   },
-            {k:'bpSys', l:'収縮期血圧' },
-            {k:'bpDia', l:'拡張期血圧' },
-            {k:'spo2',  l:'SpO₂ (%)'  },
-            {k:'rr',    l:'呼吸数 (/分)'},
-            {k:'temp',  l:'体温 (°C)'  },
-          ].map(({k,l})=>`
-            <div>
-              <div style="font-size:10px;font-weight:900;color:var(--t3);margin-bottom:4px">${l}</div>
-              <input class="ifield wf" value="${esc(LV[k]||'')}" oninput="LV['${k}']=this.value" placeholder="--" style="font-size:18px;font-weight:900;padding:10px 12px">
-            </div>`).join('')}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <h3 style="font-size:14px;font-weight:900;color:var(--t2);text-transform:uppercase;letter-spacing:.08em">バイタルサイン</h3>
+          <div style="display:flex;gap:6px">
+            <button onclick="pushVitals()" class="btn btn-red" style="padding:8px 16px;font-size:13px;border-radius:10px">📤 更新・同期</button>
+            <button onclick="hideVitals()" style="padding:8px 12px;border-radius:10px;font-size:12px;font-weight:900;border:2px solid var(--b1);background:${SS.showVitals?'var(--s2)':'#111'};color:${SS.showVitals?'var(--t1)':'#fff'};white-space:nowrap">
+              ${SS.showVitals?'🙈 全非表示':'👁 全表示'}
+            </button>
+          </div>
         </div>
 
-        <!-- 同期ボタン群 -->
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button onclick="pushVitals()" class="btn btn-red" style="flex:1;padding:14px;font-size:14px;border-radius:13px;transition:background .3s">
-            📤 同期
-          </button>
-          <button onclick="hideVitals()" style="padding:14px 16px;border-radius:13px;font-size:12px;font-weight:900;border:2px solid var(--b1);background:${SS.showVitals?'var(--s2)':'var(--t0)'};color:${SS.showVitals?'var(--t1)':'#fff'};transition:all .2s;white-space:nowrap;flex-shrink:0">
-            ${SS.showVitals?'🙈 非表示':'👁 再表示'}
-          </button>
-        </div>
-        <div id="sync-status" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;color:#16a34a;text-align:center">
+        <!-- 個別バイタル行 -->
+        ${(()=>{
+          const vv = SS.vitalVisibility||{hr:true,rr:true,bp:true,spo2:true,temp:true};
+          const rows=[
+            {k:'hr',    vk:'hr',   l:'HR',    unit:'bpm',  color:'#ff4444'},
+            {k:'bpSys', vk:'bp',   l:'収縮期BP', unit:'mmHg', color:'#4ade80'},
+            {k:'bpDia', vk:'bp',   l:'拡張期BP', unit:'mmHg', color:'#4ade80'},
+            {k:'spo2',  vk:'spo2', l:'SpO₂',  unit:'%',    color:'#60a5fa'},
+            {k:'rr',    vk:'rr',   l:'呼吸数', unit:'/分',  color:'#00c8ff'},
+            {k:'temp',  vk:'temp', l:'体温',   unit:'°C',   color:'#fb923c'},
+          ];
+          return rows.map(({k,vk,l,unit,color})=>{
+            const vis=vv[vk]!==false;
+            return \`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--b0)">
+              <button onclick="toggleVV('${vk}')" title="${vis?'非表示にする':'表示する'}"
+                style="width:32px;height:32px;border-radius:8px;font-size:14px;flex-shrink:0;background:${vis?'color:none':'#f3f4f6'};border:2px solid ${vis?color:'var(--b1)'};color:${vis?color:'var(--t3)'};display:flex;align-items:center;justify-content:center;transition:all .2s">
+                ${vis?'👁':'🙈'}
+              </button>
+              <div style="width:64px;flex-shrink:0">
+                <div style="font-size:10px;font-weight:900;color:${vis?color:'var(--t3)'};margin-bottom:1px">${l}</div>
+                <div style="font-size:9px;color:var(--t3)">${unit}</div>
+              </div>
+              <input class="ifield" value="${esc(LV[k]||'')}" oninput="LV['${k}']=this.value" placeholder="--"
+                style="flex:1;font-size:20px;font-weight:900;padding:8px 10px;opacity:${vis?1:.4}">
+            </div>\`;
+          }).join('');
+        })()}
+
+        <div id="sync-status" style="display:none;margin-top:10px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:800;color:#16a34a;text-align:center">
           ✅ 同期しました
         </div>
       </div>
@@ -1473,6 +1491,13 @@ function setLV(k,v){
   }
   renderMain();
 }
+function toggleVV(key){
+  const vv = {...(SS.vitalVisibility||{hr:true,rr:true,bp:true,spo2:true,temp:true})};
+  vv[key] = !vv[key];
+  SS.vitalVisibility = vv;
+  renderMain(); // UIだけ即時更新（同期は pushVitals で行う）
+}
+
 async function hideVitals(){
   const nowShowing = SS.showVitals;
   await pushSession({ showVitals: !nowShowing });
@@ -1494,7 +1519,7 @@ async function hideVitals(){
 async function pushVitals(){
   const btn = document.querySelector('[onclick="pushVitals()"]');
   if(btn){ btn.disabled=true; btn.innerHTML='⏳ 送信中...'; }
-  await pushSession({vitals:{...LV},showVitals:true});
+  await pushSession({vitals:{...LV},showVitals:true,vital_visibility:SS.vitalVisibility||{hr:true,rr:true,bp:true,spo2:true,temp:true}});
   // 送信完了フィードバック
   if(btn){
     btn.innerHTML='✅ 同期完了';
@@ -2053,6 +2078,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ ['M-addcase','M-f
      vitals jsonb default '{}',
      show_vitals boolean default false,
      abcde jsonb default '{}',
+     vital_visibility jsonb default '{"hr":true,"rr":true,"bp":true,"spo2":true,"temp":true}',
      updated_at timestamptz default now()
    );
    create index if not exists sim_sessions_case_id on sim_sessions(case_id);
