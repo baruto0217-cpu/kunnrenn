@@ -1553,17 +1553,17 @@ function toggleVV(key){
 
 async function hideVitals(){
   const nowShowing = SS.showVitals;
-  // 全非表示: 個別visibility も全て false / 全表示: 全て true
   const newShowVitals = !nowShowing;
+  // SS を先に更新してから renderMain / pushSession
+  SS.showVitals = newShowVitals;
   if(!newShowVitals){
-    // 全非表示: 個別も全てoff、ECGもoff
     SS.vitalVisibility = {hr:false,rr:false,bp:false,spo2:false,temp:false};
     SS.showEcg = false;
   } else {
-    // 全表示: 個別も全てon、ECGもon
     SS.vitalVisibility = {hr:true,rr:true,bp:true,spo2:true,temp:true};
     SS.showEcg = true;
   }
+  renderMain(); // SS 更新直後に再描画→個別ボタンも即座に反映
   await pushSession({ showVitals: newShowVitals, vital_visibility: SS.vitalVisibility, show_ecg: SS.showEcg });
   // ナビバー更新
   const indicator = $('vital-indicator');
