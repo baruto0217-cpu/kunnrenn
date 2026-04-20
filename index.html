@@ -298,11 +298,11 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
   <div id="part-top" style="display:flex;gap:0;flex:1;min-height:0;background:#000;overflow:hidden;border:1px solid #1a1a1a;border-radius:8px">
 
     <!-- バイタル数値（左列・日本光電スタイル） -->
-    <div id="pv-wrap" style="width:clamp(180px,38vw,480px);flex-shrink:0;display:flex;flex-direction:column;gap:32px;height:100%;background:#000;border-right:1px solid #1a1a1a;transition:width .3s;overflow:hidden;padding:16px 6px">
+    <div id="pv-wrap" style="width:clamp(180px,38vw,480px);flex-shrink:0;display:flex;flex-direction:column;gap:40px;height:100%;background:#000;border-right:1px solid #1a1a1a;transition:width .3s;overflow:hidden;padding:16px 6px">
 
       <!-- HR -->
-      <div style="flex:1;border-radius:6px;background:#0f0000;padding:2px 6px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:0">
-        <div style="color:#ff6666;font-size:clamp(13px,2vh,22px);font-weight:900;letter-spacing:.12em">HR</div>
+      <div style="flex:1;border-radius:6px;background:#0f0000;padding:1px 5px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:0">
+        <div style="color:#ff6666;font-size:clamp(15px,2.5vh,28px);font-weight:900;letter-spacing:.12em">HR</div>
         <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
           <span id="pv-hr" style="color:#ff2222;font-size:clamp(36px,7vh,88px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
           <span style="color:rgba(255,34,34,.4);font-size:clamp(11px,1.5vh,16px);font-weight:700">/min</span>
@@ -310,8 +310,8 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       </div>
 
       <!-- SpO₂ -->
-      <div style="flex:1;border-radius:6px;background:#00080f;padding:2px 6px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:0">
-        <div style="color:#00ddff;font-size:clamp(13px,2vh,22px);font-weight:900;letter-spacing:.08em">SpO₂</div>
+      <div style="flex:1;border-radius:6px;background:#00080f;padding:1px 5px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:0">
+        <div style="color:#00ddff;font-size:clamp(15px,2.5vh,28px);font-weight:900;letter-spacing:.08em">SpO₂</div>
         <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
           <span id="pv-spo2" style="color:#00ddff;font-size:clamp(32px,6.5vh,78px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
           <span style="color:rgba(0,221,255,.4);font-size:clamp(11px,1.5vh,16px);font-weight:700">%</span>
@@ -319,8 +319,8 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       </div>
 
       <!-- BP -->
-      <div style="flex:1;border-radius:6px;background:#0f0f00;padding:2px 6px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:0">
-        <div style="color:#ffee00;font-size:clamp(13px,2vh,22px);font-weight:900;letter-spacing:.08em">NIBP</div>
+      <div style="flex:1;border-radius:6px;background:#0f0f00;padding:1px 5px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:0">
+        <div style="color:#ffee00;font-size:clamp(15px,2.5vh,28px);font-weight:900;letter-spacing:.08em">NIBP</div>
         <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
           <span id="pv-bp" style="color:#ffee00;font-size:clamp(22px,5vh,60px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--/--</span>
           <span style="color:rgba(255,238,0,.35);font-size:clamp(11px,1.5vh,16px);font-weight:700">mmHg</span>
@@ -328,8 +328,8 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       </div>
 
       <!-- Temp -->
-      <div style="flex:1;border-radius:6px;background:#0f0700;padding:2px 6px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:0">
-        <div style="color:#ff9800;font-size:clamp(13px,2vh,22px);font-weight:900;letter-spacing:.08em">TEMP</div>
+      <div style="flex:1;border-radius:6px;background:#0f0700;padding:1px 5px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:0">
+        <div style="color:#ff9800;font-size:clamp(15px,2.5vh,28px);font-weight:900;letter-spacing:.08em">TEMP</div>
         <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
           <span id="pv-temp" style="color:#ff9800;font-size:clamp(22px,5vh,58px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
           <span style="color:rgba(255,152,0,.4);font-size:clamp(11px,1.5vh,16px);font-weight:700">°C</span>
@@ -337,8 +337,8 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       </div>
 
       <!-- RR -->
-      <div style="flex:1;border-radius:6px;background:#0a0a0a;padding:2px 6px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:0">
-        <div style="color:#ccc;font-size:clamp(13px,2vh,22px);font-weight:900;letter-spacing:.08em">RR</div>
+      <div style="flex:1;border-radius:6px;background:#0a0a0a;padding:1px 5px;display:flex;flex-direction:column;justify-content:center;min-height:0;gap:0">
+        <div style="color:#ccc;font-size:clamp(15px,2.5vh,28px);font-weight:900;letter-spacing:.08em">RR</div>
         <div style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px">
           <span id="pv-rr" style="color:#ddd;font-size:clamp(26px,5.5vh,68px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums">--</span>
           <span style="color:rgba(200,200,200,.35);font-size:clamp(11px,1.5vh,16px);font-weight:700">/min</span>
