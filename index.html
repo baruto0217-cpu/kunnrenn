@@ -810,7 +810,11 @@ function applySession(data){
     if(data.metronome!=null) SS.metronome=typeof data.metronome==='string'?JSON.parse(data.metronome):data.metronome;
     if(data.vitals!=null) SS.vitals=typeof data.vitals==='string'?JSON.parse(data.vitals):data.vitals;
     if(data.show_vitals!=null) SS.showVitals=data.show_vitals;
-    if(data.vital_visibility!=null) SS.vitalVisibility=typeof data.vital_visibility==='string'?JSON.parse(data.vital_visibility):data.vital_visibility;
+    if(data.vital_visibility!=null && typeof data.vital_visibility==='object'){
+      SS.vitalVisibility=data.vital_visibility;
+    } else if(typeof data.vital_visibility==='string' && data.vital_visibility){
+      try{ SS.vitalVisibility=JSON.parse(data.vital_visibility); }catch(e){}
+    }
     if(data.abcde!=null){
       SS.abcde=typeof data.abcde==='string'?JSON.parse(data.abcde):data.abcde;
       // ローカルバッファも同期（フォーカス中でなければ）
@@ -900,7 +904,7 @@ function applyPartState(s,prev){
   const v=s.vitals||{};
   if(s.showVitals){
     // モニター表示中：実際の値を表示
-    const vv = s.vitalVisibility||{hr:true,rr:true,bp:true,spo2:true,temp:true};
+    const vv = s.vitalVisibility || SS.vitalVisibility || {hr:true,rr:true,bp:true,spo2:true,temp:true};
     const vvShow = (el, val, show) => { if(!el) return; el.textContent=show?val:'－'; el.style.opacity=show?'1':'0.2'; };
     vvShow($('pv-hr'),  (v.hr&&v.hr!=='')?v.hr:'--', vv.hr!==false);
     vvShow($('pv-bp'),  (v.bpSys||'--')+'/'+(v.bpDia||'--'), vv.bp!==false);
@@ -1512,7 +1516,8 @@ function toggleVV(key){
   const vv = {...(SS.vitalVisibility||{hr:true,rr:true,bp:true,spo2:true,temp:true})};
   vv[key] = !vv[key];
   SS.vitalVisibility = vv;
-  renderMain(); // UIだけ即時更新（同期は pushVitals で行う）
+  pushSession({vital_visibility: vv}); // 即座に保存
+  renderMain();
 }
 
 async function hideVitals(){
