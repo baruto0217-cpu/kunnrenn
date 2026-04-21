@@ -590,8 +590,8 @@ let SS = { // session state
   metronome:{on:false,bpm:100,isIrregular:false},
   vitals:{bpSys:'--',bpDia:'--',hr:'72',rr:'--',spo2:'--',temp:'--',rhythmType:'SR',sweepSpeed:160},
   showVitals:false,
-  showEcg:true,
-  vitalVisibility:{hr:true,rr:true,bp:true,spo2:true,temp:true}, // 個別表示設定
+  showEcg:false,
+  vitalVisibility:{hr:false,rr:false,bp:false,spo2:false,temp:false}, // 初期値は全て非表示
   abcde:{ A:'', B:'', C:'', D:'', E:'', activeKey:null }  // ABCDE口頭付与
 };
 let LV = {bpSys:'',bpDia:'',hr:'72',rr:'',spo2:'',temp:'',rhythmType:'SR',sweepSpeed:160};
@@ -1768,7 +1768,7 @@ function initHTML(){
   // 所見カードHTMLを生成
   const findings=pf(curCase);
   const initList=(findings['Init']||[]);
-  const moveBtn=(id,dir)=>editMode?`<button onclick="moveF('${id}','Init',${dir})" style="background:none;color:var(--t3);font-size:13px;padding:2px 6px;border-radius:4px">${dir<0?'↑':'↓'}</button>`:'';
+  const moveBtn=(id,dir)=>editMode?`<button onclick="moveF('${id}','Init',${dir})" title="${dir<0?'上に移動':'下に移動'}" style="background:rgba(0,0,0,.12);color:var(--t1);font-size:14px;padding:4px 8px;border-radius:7px;line-height:1;border:1.5px solid var(--b1);font-weight:900;min-width:28px;text-align:center">${dir<0?'↑':'↓'}</button>`:'';
   const findingCards = initList.length>0 ? `
     <div style="margin-bottom:12px">
       <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">📋 観察所見</div>
@@ -1802,8 +1802,8 @@ function initHTML(){
     const list=grouped[g]||[];
     const cards=list.map((f,i)=>`<div style="position:relative">
       ${editMode?`<div style="position:absolute;top:4px;right:4px;display:flex;gap:2px;z-index:2;background:rgba(255,255,255,.9);border-radius:6px;padding:2px">
-        ${i>0?`<button onclick="moveInitF('${f.id}',-1,'${g}')" style="background:none;color:var(--t3);font-size:13px;padding:2px 5px;border-radius:4px">↑</button>`:''}
-        ${i<list.length-1?`<button onclick="moveInitF('${f.id}',1,'${g}')" style="background:none;color:var(--t3);font-size:13px;padding:2px 5px;border-radius:4px">↓</button>`:''}
+        ${i>0?`<button onclick="moveInitF('${f.id}',-1,'${g}')" title="上に移動" style="background:rgba(0,0,0,.12);color:var(--t1);font-size:14px;padding:4px 8px;border-radius:7px;border:1.5px solid var(--b1);font-weight:900;min-width:28px;text-align:center">↑</button>`:''}
+        ${i<list.length-1?`<button onclick="moveInitF('${f.id}',1,'${g}')" title="下に移動" style="background:rgba(0,0,0,.12);color:var(--t1);font-size:14px;padding:4px 8px;border-radius:7px;border:1.5px solid var(--b1);font-weight:900;min-width:28px;text-align:center">↓</button>`:''}
       </div>`:''}
       ${fcHTML(f,'Init')}
     </div>`).join('');
@@ -2037,10 +2037,10 @@ function findingsHTML(tab){
   const findings=pf(curCase);
   let list=(findings[tab]||[]);
   if(tab==='Full'&&bodyPart) list=list.filter(f=>f.bodyPart===bodyPart&&(!f.side||f.side===bodySide));
-  const moveBtn=(id,dir,t)=>editMode?`<button onclick="moveF('${id}','${t}',${dir})" style="background:none;color:var(--t3);font-size:13px;padding:2px 4px;border-radius:4px;line-height:1">${dir<0?'↑':'↓'}</button>`:'';
+  const moveBtn=(id,dir,t)=>editMode?`<button onclick="moveF('${id}','${t}',${dir})" title="${dir<0?'上に移動':'下に移動'}" style="background:rgba(0,0,0,.12);color:var(--t1);font-size:14px;padding:4px 8px;border-radius:7px;line-height:1;border:1.5px solid var(--b1);font-weight:900;min-width:28px;text-align:center">${dir<0?'↑':'↓'}</button>`:'';
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
     ${list.map((f,i)=>`<div style="position:relative">
-      ${editMode?`<div style="position:absolute;top:6px;right:6px;display:flex;flex-direction:column;gap:2px;z-index:2">
+      ${editMode?`<div style="position:absolute;top:6px;right:6px;display:flex;flex-direction:column;gap:3px;z-index:2">
         ${i>0?moveBtn(f.id,-1,tab):''}
         ${i<list.length-1?moveBtn(f.id,1,tab):''}
       </div>`:''}
@@ -2086,7 +2086,7 @@ function fcHTML(f,tab){
   // メモタイプは description をカード内に大きく表示、memo は覚書として下に
   const descHtml = f.type==='memo' && f.description
     ? `<div style="margin-top:6px;font-size:13px;color:var(--t1);line-height:1.6;padding:8px 10px;background:var(--s1);border-radius:8px">${esc(f.description)}</div>` : '';
-  const memoHtml = f.memo ? `<div style="margin-top:8px;padding:8px 10px;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:6px;font-size:11px;color:#78350f;line-height:1.5">📝 ${esc(f.memo)}</div>` : '';
+  const memoHtml = f.memo ? `<div style="margin-top:8px;padding:8px 10px;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:6px;font-size:13px;color:#78350f;line-height:1.6">📝 ${esc(f.memo)}</div>` : '';
   return `<div class="fc${aImg||aSnd||aSpk?' act':''}">
     <div class="flex jsb ac" style="margin-bottom:11px">
       <div>
