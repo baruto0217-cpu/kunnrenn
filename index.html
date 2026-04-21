@@ -474,7 +474,11 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       <button id="ft-sound"  onclick="setFT('sound')"  style="flex:1;padding:8px;border-radius:8px;font-size:10px;font-weight:900;text-transform:uppercase;background:transparent;color:var(--t2)">聴診音</button>
     </div>
     <input id="fm-label" class="ifield wf" placeholder="タイトル" style="margin-bottom:10px">
-    <textarea id="fm-desc" class="ifield wf" placeholder="説明文" style="height:90px;resize:none;margin-bottom:10px"></textarea>
+    <textarea id="fm-desc" class="ifield wf" placeholder="説明文（実施者に表示される）" style="height:70px;resize:none;margin-bottom:10px"></textarea>
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">📝 想定者メモ（自分だけに見える）</div>
+      <textarea id="fm-memo" class="ifield wf" placeholder="例: 受け答えのポイント、次の展開など" style="height:64px;resize:none;background:var(--s2)"></textarea>
+    </div>
     <div id="fm-upload" class="upa" onclick="document.getElementById('fm-file').click()">📁 ファイルをアップロード</div>
     <input type="file" id="fm-file" style="display:none" onchange="onFileChange(event)">
     <div class="flex g3" style="margin-top:18px">
@@ -1836,7 +1840,7 @@ function initHTML(){
 function openFindingFormInit(group){
   ftab='Init';
   fform={id:'',type:'image',label:'',url:'',description:'',initGroup:group};
-  $('fm-label').value=''; $('fm-desc').value='';
+  $('fm-label').value=''; $('fm-desc').value=''; $('fm-memo').value='';
   $('fm-title').textContent='所見の登録';
   $('fm-save').textContent='保存する';
   setFT('image');
@@ -2064,6 +2068,7 @@ function fcHTML(f,tab){
   }else{
     abtn=`<button onclick="togSnd('${f.id}')" style="width:100%;padding:11px;border-radius:11px;font-size:12px;font-weight:900;color:#fff;background:${aSnd?'var(--red)':'var(--orange)'}">${aSnd?'聴診停止':'聴診音を再生'}</button>`;
   }
+  const memoHtml = f.memo ? `<div style="margin-top:8px;padding:8px 10px;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:6px;font-size:11px;color:#78350f;line-height:1.5">📝 ${esc(f.memo)}</div>` : '';
   return `<div class="fc${aImg||aSnd||aSpk?' act':''}">
     <div class="flex jsb ac" style="margin-bottom:11px">
       <div>
@@ -2076,6 +2081,7 @@ function fcHTML(f,tab){
       </div>`:''}
     </div>
     ${abtn}
+    ${memoHtml}
   </div>`;
 }
 
@@ -2132,6 +2138,7 @@ function openFindingForm(enc,tab){
   else{ fform={id:'',type:'image',label:'',url:'',description:'',bodyPart:bodyPart||'頭部',side:bodySide}; }
   $('fm-label').value=fform.label||'';
   $('fm-desc').value=fform.description||'';
+  $('fm-memo').value=fform.memo||'';
   $('fm-title').textContent=fform.id?'所見を編集':'所見の登録';
   $('fm-save').textContent=fform.id?'更新する':'保存する';
   setFT(fform.type||'image');
@@ -2177,6 +2184,7 @@ function compImg(b64){ return new Promise(res=>{
 async function saveFinding(){
   fform.label=$('fm-label').value.trim();
   fform.description=$('fm-desc').value.trim();
+  fform.memo=$('fm-memo').value.trim();
   if(!fform.label){ alert('タイトルを入力してください'); return; }
   if(fform.type==='image' && !fform.url){ alert('画像をアップロードしてください'); return; }
   const fs=pf(curCase);
