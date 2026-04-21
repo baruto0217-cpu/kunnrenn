@@ -164,29 +164,72 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
   .tab-icon{font-size:22px}
   .inst-main{padding:40px 56px}
 }
-/* ── スマホ横向き（landscape）── */
+/* ── スマホ横向き（landscape, height<=500px）── */
 @media(max-height:500px) and (orientation:landscape){
-  /* 参加者画面: バイタルを左列・ECGを右に横並び */
-  #G-part{padding:6px 10px}
-  #part-top{height:auto!important;flex:1}
-  #pv-wrap{width:120px!important}
-  #G-part nav{height:24px;margin-bottom:4px}
-  #pv-wrap span[style*="font-size:52px"]{font-size:32px!important}
-  #pv-wrap span[style*="font-size:42px"]{font-size:28px!important}
-  #pv-wrap span[style*="font-size:36px"]{font-size:24px!important}
-  /* 想定者: サイドバーを復活（横向きは広いので底タブ不要）*/
+
+  /* ===== 実施者画面 ===== */
+  #G-part{padding:2px 6px;padding-bottom:max(2px,env(safe-area-inset-bottom))}
+  #G-part nav{height:20px;margin-bottom:2px;font-size:8px}
+  #G-part nav button{font-size:8px;padding:3px 8px}
+
+  /* バイタル列を小さく */
+  #pv-wrap{width:110px!important;gap:3px!important;padding:4px 4px 4px 4px!important}
+  #pv-wrap>div{padding:1px 4px!important}
+  /* ラベル・数値フォントを縮小 */
+  #pv-wrap div[style*="clamp(15px"]{font-size:10px!important}
+  #pv-wrap div[style*="clamp(16px"]{font-size:10px!important}
+  #pv-wrap span[style*="clamp(36px"]{font-size:clamp(20px,5vh,32px)!important}
+  #pv-wrap span[style*="clamp(32px"]{font-size:clamp(18px,4.5vh,28px)!important}
+  #pv-wrap span[style*="clamp(26px"]{font-size:clamp(16px,4vh,24px)!important}
+  #pv-wrap span[style*="clamp(22px"]{font-size:clamp(14px,3.5vh,22px)!important}
+  #pv-wrap span[style*="clamp(11px"]{font-size:9px!important}
+
+  /* ===== 想定者画面 ===== */
+  /* サイドバーを左側に復活（底タブ不要）*/
   .inst-side{
     position:relative!important;bottom:auto!important;
-    width:72px!important;height:auto!important;
-    flex-direction:column!important;
-    border-right:1px solid var(--b0)!important;border-top:none!important;
+    width:56px!important;height:auto!important;
+    flex-direction:column!important;gap:2px!important;
+    border-right:1px solid var(--b0)!important;
+    border-top:none!important;box-shadow:none!important;
+    padding:6px 4px!important;
   }
-  .tab-btn{flex-direction:column!important;height:auto!important;padding:10px 4px!important;font-size:8px!important}
-  .inst-main{padding:12px!important;padding-bottom:12px!important}
+  .tab-btn{
+    flex-direction:column!important;height:auto!important;
+    padding:8px 2px!important;font-size:7px!important;gap:2px!important;
+    border-radius:10px!important;
+  }
+  .tab-icon{font-size:16px!important}
+  .tab-btn.on{transform:none!important}
+  .inst-main{padding:8px!important;padding-bottom:8px!important}
   .inst-body{flex-direction:row!important}
-  /* navを小さく */
-  .inst-nav{padding:8px 14px}
-  .cases-hdr{padding:10px 16px}
+  .inst-nav{padding:5px 10px!important;font-size:12px}
+  .inst-nav span[style*="font-size:16px"]{font-size:13px!important}
+  #edit-btn{padding:5px 10px!important;font-size:11px!important}
+
+  /* カード・フォントを縮小 */
+  .card{padding:12px!important}
+  .fc{padding:8px!important}
+  .fc button{min-height:36px!important;font-size:11px!important}
+  .rhy-grid{grid-template-columns:1fr 1fr 1fr!important}
+  .rhy-btn{padding:6px 4px!important;font-size:10px!important}
+
+  /* ===== 症例一覧 ===== */
+  .cases-hdr{padding:6px 12px!important}
+  .cases-body{padding:8px!important}
+  .case-card{padding:12px 16px!important;border-radius:14px!important}
+}
+
+/* ── スマホ横向き追加: 幅960px以下 landscape ── */
+@media(max-width:960px) and (orientation:landscape) and (max-height:500px){
+  /* inst-main のモニタータブ */
+  .vp{padding:6px 8px!important;border-radius:10px!important}
+  /* 所見カード */
+  .fo-card{padding:8px!important;border-radius:8px!important}
+  /* modal */
+  .modal{padding:14px 14px 20px!important;max-height:96vh;overflow-y:auto}
+  /* ナビバー indicator */
+  #vital-indicator{font-size:9px!important}
 }
 </style>
 </head>
@@ -366,7 +409,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       </div>
       <!-- 所見オーバーレイ（ecg-area全体に重なる・ecg-areaのopacity影響なし） -->
       <div id="fo" style="display:none;position:absolute;inset:0;z-index:30">
-        <div id="fo-inner" style="display:flex;flex-direction:row;gap:6px;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;align-items:stretch;justify-content:center;padding:6px;background:rgba(0,0,0,.85)"></div>
+        <div id="fo-inner" style="display:flex;flex-direction:row;gap:6px;width:100%;height:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;align-items:stretch;justify-content:center;padding:6px;background:rgba(0,0,0,.92)"></div>
       </div>
     </div>
 
@@ -1003,11 +1046,10 @@ function renderFO(s){
     abcdeKey:ab.activeKey||'',
     abcdeVal:ab.activeKey?ab[ab.activeKey]||'':''
   });
-  if(foKey===_lastFOKey){ fo.style.display='flex'; return; }
+  if(foKey===_lastFOKey){ fo.style.display='block'; return; }
   _lastFOKey=foKey;
 
-  fo.style.display='flex';
-  fo.style.flexDirection='column'; // fo 自体は block的に
+  fo.style.display='block'; // position:absolute;inset:0 なのでblockで全面カバー
   inner.innerHTML='';
   inner.style.flexDirection='row';
     active.forEach(f=>{
