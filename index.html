@@ -472,15 +472,28 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
       <button id="ft-image"  onclick="setFT('image')"  style="flex:1;padding:8px;border-radius:8px;font-size:10px;font-weight:900;text-transform:uppercase;background:var(--s0);color:var(--blue)">画像</button>
       <button id="ft-speech" onclick="setFT('speech')" style="flex:1;padding:8px;border-radius:8px;font-size:10px;font-weight:900;text-transform:uppercase;background:transparent;color:var(--t2)">音声</button>
       <button id="ft-sound"  onclick="setFT('sound')"  style="flex:1;padding:8px;border-radius:8px;font-size:10px;font-weight:900;text-transform:uppercase;background:transparent;color:var(--t2)">聴診音</button>
+      <button id="ft-memo"   onclick="setFT('memo')"   style="flex:1;padding:8px;border-radius:8px;font-size:10px;font-weight:900;text-transform:uppercase;background:transparent;color:var(--t2)">📝メモ</button>
     </div>
+
+    <!-- タイトル（共通） -->
     <input id="fm-label" class="ifield wf" placeholder="タイトル" style="margin-bottom:10px">
-    <textarea id="fm-desc" class="ifield wf" placeholder="説明文（実施者に表示される）" style="height:70px;resize:none;margin-bottom:10px"></textarea>
+
+    <!-- 説明文（メモタイプ以外に表示） -->
+    <div id="fm-desc-wrap">
+      <textarea id="fm-desc" class="ifield wf" placeholder="説明文（実施者に表示される）" style="height:70px;resize:none;margin-bottom:10px"></textarea>
+    </div>
+
+    <!-- 想定者メモ（共通） -->
     <div style="margin-bottom:10px">
       <div style="font-size:10px;font-weight:900;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">📝 想定者メモ（自分だけに見える）</div>
-      <textarea id="fm-memo" class="ifield wf" placeholder="例: 受け答えのポイント、次の展開など" style="height:64px;resize:none;background:var(--s2)"></textarea>
+      <textarea id="fm-memo" class="ifield wf" placeholder="例: 受け答えのポイント、次の展開など" style="height:80px;resize:none;background:var(--s2)"></textarea>
     </div>
-    <div id="fm-upload" class="upa" onclick="document.getElementById('fm-file').click()">📁 ファイルをアップロード</div>
-    <input type="file" id="fm-file" style="display:none" onchange="onFileChange(event)">
+
+    <!-- ファイルアップロード（メモタイプ以外に表示） -->
+    <div id="fm-upload-wrap">
+      <div id="fm-upload" class="upa" onclick="document.getElementById('fm-file').click()">📁 ファイルをアップロード</div>
+      <input type="file" id="fm-file" style="display:none" onchange="onFileChange(event)">
+    </div>
     <div class="flex g3" style="margin-top:18px">
       <button class="btn btn-ghost f1" onclick="closeModal('M-finding')">キャンセル</button>
       <button class="btn btn-blue f1" id="fm-save" onclick="saveFinding()">保存する</button>
@@ -2058,16 +2071,21 @@ function fcHTML(f,tab){
   const aImg=SS.activeFindingIds.includes(f.id);
   const aSnd=SS.playingSoundUrl===f.url;
   const aSpk=SS.speechId===f.id;
-  const tl=f.type==='image'?'画像':f.type==='speech'?'音声':'聴診音';
-  const tc=f.type==='image'?'var(--blue)':f.type==='speech'?'var(--blue)':'var(--orange)';
+  const tl=f.type==='image'?'画像':f.type==='speech'?'音声':f.type==='memo'?'メモ':'聴診音';
+  const tc=f.type==='image'?'var(--blue)':f.type==='speech'?'var(--blue)':f.type==='memo'?'var(--orange)':'var(--orange)';
   let abtn='';
   if(f.type==='image'){
     abtn=`<button onclick="togImg('${f.id}')" style="width:100%;padding:11px;border-radius:11px;font-size:12px;font-weight:900;color:#fff;background:${aImg?'var(--red)':'#111'}">${aImg?'解除する':'表示する'}</button>`;
   }else if(f.type==='speech'){
     abtn=`<button onclick="togSpk('${f.id}')" style="width:100%;padding:11px;border-radius:11px;font-size:12px;font-weight:900;color:#fff;background:${aSpk?'var(--red)':'var(--blue)'}">${aSpk?'再生停止':'音声を再生'}</button>`;
+  }else if(f.type==='memo'){
+    abtn=''; // メモはボタンなし（想定者だけが見る）
   }else{
     abtn=`<button onclick="togSnd('${f.id}')" style="width:100%;padding:11px;border-radius:11px;font-size:12px;font-weight:900;color:#fff;background:${aSnd?'var(--red)':'var(--orange)'}">${aSnd?'聴診停止':'聴診音を再生'}</button>`;
   }
+  // メモタイプは description をカード内に大きく表示、memo は覚書として下に
+  const descHtml = f.type==='memo' && f.description
+    ? `<div style="margin-top:6px;font-size:13px;color:var(--t1);line-height:1.6;padding:8px 10px;background:var(--s1);border-radius:8px">${esc(f.description)}</div>` : '';
   const memoHtml = f.memo ? `<div style="margin-top:8px;padding:8px 10px;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:6px;font-size:11px;color:#78350f;line-height:1.5">📝 ${esc(f.memo)}</div>` : '';
   return `<div class="fc${aImg||aSnd||aSpk?' act':''}">
     <div class="flex jsb ac" style="margin-bottom:11px">
@@ -2080,6 +2098,7 @@ function fcHTML(f,tab){
         <button onclick="delFinding('${f.id}','${tab}')" style="background:none;color:#fca5a5;font-size:15px;padding:4px;border-radius:6px">🗑️</button>
       </div>`:''}
     </div>
+    ${descHtml}
     ${abtn}
     ${memoHtml}
   </div>`;
@@ -2151,12 +2170,18 @@ function openFindingForm(enc,tab){
 
 function setFT(t){
   fform.type=t;
-  ['image','speech','sound'].forEach(x=>{
+  ['image','speech','sound','memo'].forEach(x=>{
     const b=$('ft-'+x); if(!b) return;
     b.style.background=x===t?'var(--s0)':'transparent';
     b.style.color=x===t?'var(--blue)':'var(--t2)';
   });
-  $('fm-file').accept=t==='image'?'image/*':'audio/*';
+  // メモタイプでは説明文・アップロード欄を非表示
+  const isMemo = t==='memo';
+  const dw=$('fm-desc-wrap');
+  const uw=$('fm-upload-wrap');
+  if(dw) dw.style.display=isMemo?'none':'';
+  if(uw) uw.style.display=isMemo?'none':'';
+  if(!isMemo) $('fm-file').accept=t==='image'?'image/*':'audio/*';
 }
 
 async function onFileChange(e){
@@ -2187,6 +2212,7 @@ async function saveFinding(){
   fform.memo=$('fm-memo').value.trim();
   if(!fform.label){ alert('タイトルを入力してください'); return; }
   if(fform.type==='image' && !fform.url){ alert('画像をアップロードしてください'); return; }
+  if(fform.type==='memo') fform.url=''; // メモはURLなし
   const fs=pf(curCase);
   if(!fs[ftab]) fs[ftab]=[];
   if(fform.id){
