@@ -594,7 +594,22 @@ let SS = { // session state
   vitalVisibility:{hr:false,rr:false,bp:false,spo2:false,temp:false}, // 初期値は全て非表示
   abcde:{ A:'', B:'', C:'', D:'', E:'', activeKey:null }  // ABCDE口頭付与
 };
-let LV = {bpSys:'',bpDia:'',hr:'72',rr:'',spo2:'',temp:'',rhythmType:'SR',sweepSpeed:160};
+let LV = {bpSys:'',bpDia:'',hr:'',rr:'',spo2:'',temp:'',rhythmType:'SR',sweepSpeed:160};
+
+function lvKey(cid){ return 'kyukyu_lv_'+(currentRoom||'r1')+'_'+cid; }
+function saveLV(cid){
+  if(!cid) return;
+  try{ localStorage.setItem(lvKey(cid), JSON.stringify(LV)); }catch(e){}
+}
+function loadLV(cid){
+  if(!cid){ LV={bpSys:'',bpDia:'',hr:'',rr:'',spo2:'',temp:'',rhythmType:'SR',sweepSpeed:160}; return; }
+  try{
+    const s=localStorage.getItem(lvKey(cid));
+    if(s){ LV=JSON.parse(s); return; }
+  }catch(e){}
+  // 保存がなければ初期値
+  LV={bpSys:'',bpDia:'',hr:'',rr:'',spo2:'',temp:'',rhythmType:'SR',sweepSpeed:160};
+}
 let audioOn = false, metroTimer = null, audioCtx = null;
 let ecgRaf = null, ecgX=0, ecgLY=null, ecgLT=0, ecgBS=0, ecgAJ=1;
 let ecgBpm=72, ecgRhythm='SR', ecgSweep=160;
@@ -819,7 +834,10 @@ function pf(c){ // parse findings
 }
 
 function selectCase(cid){
+  // 前の症例のLVを保存してから切替
+  if(caseId) saveLV(caseId);
   caseId=cid; curCase=cases.find(c=>c.id===cid);
+  loadLV(cid); // 新しい症例のLVをロード
 
   // ===== iOS Safari 音声unlock（ユーザータップの同期処理内で必須）=====
   // 1. AudioContext unlock（メトロノーム用）
@@ -856,6 +874,7 @@ function selectCase(cid){
 }
 
 function exitCase(){
+  if(caseId) saveLV(caseId); // 退室前に保存
   caseId=null; curCase=null;
   stopECG(); unsub(); stopMetro();
   releaseWakeLock(); // 画面スリープ防止を解除
@@ -1468,7 +1487,7 @@ function vitalRowsHTML(){
       +";display:flex;align-items:center;justify-content:center";
     var val=esc(LV[k]||"");
     var op=vis?"1":".4";
-    var inp='<input class="ifield" value="'+val+'" oninput="LV[&apos;'+k+'&apos;]=this.value" placeholder="--"'
+    var inp='<input class="ifield" value="'+val+'" oninput="LV[&apos;'+k+'&apos;]=this.value;saveLV(caseId)" placeholder="--"'
       +' style="flex:1;font-size:20px;font-weight:900;padding:8px 10px;opacity:'+op+'">';
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--b0)">'
       +'<button onclick="toggleVV(&apos;'+vk+'&apos;)" style="'+bStyle+'">'+icon+'</button>'
@@ -1592,6 +1611,7 @@ function loadPreset(idx){
   const list = getPresets();
   if(!list[idx]) return;
   LV = {...LV, ...list[idx].vitals};
+  saveLV(caseId);
   renderMain();
   // 自動同期するか確認
   if(confirm(`「${list[idx].name}」を読み込みました。
@@ -1632,6 +1652,7 @@ function setLV(k,v){
       LV.hr = String(def);
     }
   }
+  saveLV(caseId); // 変更のたびに保存
   renderMain();
 }
 async function toggleEcg(){
