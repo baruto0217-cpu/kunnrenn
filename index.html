@@ -2,10 +2,13 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>救急シミュレーター v19.2</title>
+<title>救急シミュレーター v19.3</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{background:#000;height:100%;overflow:hidden}
@@ -266,7 +269,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
 <div id="G-loading" style="display:flex">
   <h1 style="font-size:30px;font-weight:900;letter-spacing:-.02em">救急シミュレーター</h1>
   <div class="spinner"></div>
-  <p style="color:rgba(255,255,255,.35);font-size:12px;letter-spacing:.12em">INITIALIZING v19.2</p>
+  <p style="color:rgba(255,255,255,.35);font-size:12px;letter-spacing:.12em">INITIALIZING v19.3</p>
 </div>
 
 <!-- Login -->
@@ -274,7 +277,7 @@ input,textarea{font-family:inherit;outline:none;border:none;background:none}
   <div style="text-align:center;margin-bottom:36px">
     <div style="font-size:52px;margin-bottom:14px">🚑</div>
     <h1 style="font-size:28px;font-weight:900;letter-spacing:-.02em">救急シミュレーター</h1>
-    <p style="font-size:12px;opacity:.3;margin-top:6px;letter-spacing:.1em">v19.2</p>
+    <p style="font-size:12px;opacity:.3;margin-top:6px;letter-spacing:.1em">v19.3</p>
   </div>
   <div class="cfg-box">
     <div>
@@ -1066,14 +1069,16 @@ function renderFO(s){
   }
   if(pvWrap) pvWrap.style.width='140px'; // 所見表示中は縮小
 
-  // 内容が変わっていなければ再描画しない（画像の点滅防止）
+  // 内容が変わっていなければ画像カードは再描画しない（点滅防止）
+  // ただし ABCDE・音声は毎回確認（テキスト変化に対応）
   const foKey = JSON.stringify({
     ids:(s.activeFindingIds||[]).slice().sort(),
     speech:s.isSpeakingText||'',
     abcdeKey:ab.activeKey||'',
     abcdeVal:ab.activeKey?ab[ab.activeKey]||'':''
   });
-  if(foKey===_lastFOKey){ fo.style.display='block'; return; }
+  const sameKey = foKey===_lastFOKey;
+  if(sameKey){ fo.style.display='block'; return; }
   _lastFOKey=foKey;
 
   fo.style.display='block'; // position:absolute;inset:0 なのでblockで全面カバー
