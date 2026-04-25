@@ -1319,8 +1319,13 @@ function ecgDefl(t, pel, r){
     const tEl = stEl - 40;
     if(tEl >= STD) return 0;
     const tp = tEl/STD;
-    const tAmp = r==='ST_ELEV' ? 42 : 22;
-    return Math.sin(tp*Math.PI)*tAmp + stElev*(1-tp);
+    // T_TALL: 正常の2.5倍・尖った大きなT波
+    const tAmp = r==='ST_ELEV' ? 42 : r==='T_TALL' ? 60 : 22;
+    // T_TALL は細くて尖ったT波（sin^0.5 で尖らせる）
+    const tShape = r==='T_TALL'
+      ? Math.pow(Math.sin(tp*Math.PI), 0.5) * tAmp
+      : Math.sin(tp*Math.PI)*tAmp + stElev*(1-tp);
+    return tShape + (r!=='T_TALL'? stElev*(1-tp) : 0);
   };
 
   // Af: P波なし・基線ゆらぎ・RR不整
@@ -1510,6 +1515,7 @@ function vitalHTML(){
     {id:'VT',      l:'心室頻拍 (VT)', hr:180},
     {id:'VF',      l:'心室細動 (VF)', hr:null},
     {id:'ST_ELEV', l:'ST上昇',         hr:88 },
+    {id:'T_TALL',  l:'T波増高',         hr:72 },
   ];
   const spd=[{v:80,l:'x0.5 広'},{v:160,l:'x1.0 標準'},{v:320,l:'x2.0 狭'}];
   const presets = getPresets();
@@ -1641,6 +1647,7 @@ const RHYTHM_DEFAULT_HR = {
   'VT':     180,
   'VF':      null,   // VF: HRは計測不能
   'ST_ELEV': 88,
+  'T_TALL':   72,
 };
 function setLV(k,v){
   LV[k]=v;
