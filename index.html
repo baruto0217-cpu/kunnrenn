@@ -1441,12 +1441,50 @@ function renderMain(){
   if(activeTab==='Pre'){ m.innerHTML=findingsHTML('Pre'); return; }
   if(activeTab==='Full'){
     if(!bodyPart){ m.innerHTML=bodyMapHTML(); return; }
+    // 前面・背面の全部位リスト
+    const frontParts=[
+      {n:'頭部',   s:'front', icon:'🧠'},
+      {n:'胸部',   s:'front', icon:'❤️'},
+      {n:'腹部',   s:'front', icon:'🫁'},
+      {n:'上肢',   s:'front', icon:'💪'},
+      {n:'下肢',   s:'front', icon:'🦵'},
+    ];
+    const backParts=[
+      {n:'後頭部',  s:'back',  icon:'🔵'},
+      {n:'背部',    s:'back',  icon:'🟣'},
+      {n:'殿部',    s:'back',  icon:'🟤'},
+      {n:'上肢背面',s:'back',  icon:'💪'},
+      {n:'下肢背面',s:'back',  icon:'🦵'},
+    ];
+    const allParts=[...frontParts,...backParts];
+    const partBtns = allParts.map(p=>{
+      const isActive = p.n===bodyPart && p.s===bodySide;
+      const c=(pf(curCase)['Full']||[]).filter(f=>f.bodyPart===p.n&&(!f.side||f.side===p.s)).length;
+      return `<button onclick="selectPart('${p.n}','${p.s}')"
+        style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;font-size:11px;font-weight:900;flex-shrink:0;
+          background:${isActive?'var(--red)':'var(--s2)'};
+          color:${isActive?'#fff':'var(--t2)'};
+          border:2px solid ${isActive?'var(--red)':'var(--b0)'};
+          white-space:nowrap">
+        ${p.icon} ${p.n}${c>0?` <span style="background:${isActive?'rgba(255,255,255,.3)':'var(--red)'};color:#fff;border-radius:999px;font-size:9px;padding:1px 6px">${c}</span>`:''}
+      </button>`;
+    }).join('');
+
     m.innerHTML=`
-      <div class="flex ac jsb" style="margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--b0)">
-        <button onclick="bodyPart=null;renderMain()" style="display:flex;align-items:center;gap:5px;color:var(--t2);font-size:12px;font-weight:800;background:none;padding:8px">← 全身図</button>
-        <div class="flex ac g2">
-          <span class="tag ${bodySide==='front'?'tag-fr':'tag-bk'}">${bodySide==='front'?'前面':'背面'}</span>
-          <span style="font-weight:900;font-size:14px">${esc(bodyPart)}</span>
+      <!-- ナビゲーションヘッダー -->
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <button onclick="bodyPart=null;renderMain()"
+            style="display:flex;align-items:center;gap:4px;color:var(--t2);font-size:12px;font-weight:800;background:var(--s2);border:1.5px solid var(--b0);border-radius:10px;padding:7px 12px;flex-shrink:0">
+            ← 全身図
+          </button>
+          <div style="font-weight:900;font-size:15px;color:var(--t0)">
+            <span style="font-size:12px;color:${bodySide==='front'?'#1d4ed8':'#7c3aed'};background:${bodySide==='front'?'#dbeafe':'#f3e8ff'};padding:2px 8px;border-radius:999px;margin-right:6px">${bodySide==='front'?'前面':'背面'}</span>${esc(bodyPart)}
+          </div>
+        </div>
+        <!-- 部位ジャンプバー（横スクロール） -->
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+          ${partBtns}
         </div>
       </div>
       ${findingsHTML('Full')}`;
